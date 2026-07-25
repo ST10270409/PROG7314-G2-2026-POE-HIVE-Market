@@ -7,7 +7,7 @@ Group members and student numbers:
 Nonjabulo Mathenjwa — ST10077892
 Luke Lutchmiah — ST10288560
 Lonwabo Gumede — ST10270409
-Ayabonga Nzuza — ST104000793
+Ayabonga Nzuza — ST10400793
 
 Working app name: HiveMarket
 
