@@ -34,4 +34,18 @@
     <string name="listing_make_offer">Make Offer</string>
     <string name="listing_message">Message</string>
     <string name="listing_verified_student">Verified Student</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_account">Account</string>
+    <string name="settings_edit_profile">Edit Profile</string>
+    <string name="settings_section_preferences">Preferences</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_biometrics">Biometrics Login</string>
+    <string name="settings_syncing">Syncing…</string>
+    <string name="settings_sync_failed">Saved on this device — will sync when back online.</string>
+    <string name="settings_section_app">App</string>
+    <string name="settings_about">About HiveMarket</string>
+    <string name="settings_log_out">Log Out</string>
 </resources>

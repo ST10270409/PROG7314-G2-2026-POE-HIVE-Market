@@ -33,4 +33,17 @@
     <string name="listing_make_offer">Yenza Isiphakamiso</string>
     <string name="listing_message">Layezela</string>
     <string name="listing_verified_student">Isitshudeni Esiqinisekisiwe</string>
+
+    <string name="settings_title">Izilungiselelo</string>
+    <string name="settings_section_account">I-Akhawunti</string>
+    <string name="settings_edit_profile">Hlela Iphrofayela</string>
+    <string name="settings_section_preferences">Okuncanyelwayo</string>
+    <string name="settings_language">Ulimi</string>
+    <string name="settings_notifications">Izaziso</string>
+    <string name="settings_biometrics">Ukungena nge-Biometric</string>
+    <string name="settings_syncing">Iyavumelanisa…</string>
+    <string name="settings_sync_failed">Kugcinwe kule divayisi — kuzovumelaniswa lapho uxhunywa ku-inthanethi.</string>
+    <string name="settings_section_app">I-App</string>
+    <string name="settings_about">Mayelana ne-HiveMarket</string>
+    <string name="settings_log_out">Phuma</string>
 </resources>

@@ -33,4 +33,17 @@
     <string name="listing_make_offer">Maak Aanbod</string>
     <string name="listing_message">Boodskap</string>
     <string name="listing_verified_student">Geverifieerde Student</string>
+
+    <string name="settings_title">Instellings</string>
+    <string name="settings_section_account">Rekening</string>
+    <string name="settings_edit_profile">Wysig Profiel</string>
+    <string name="settings_section_preferences">Voorkeure</string>
+    <string name="settings_language">Taal</string>
+    <string name="settings_notifications">Kennisgewings</string>
+    <string name="settings_biometrics">Biometriese Aanmelding</string>
+    <string name="settings_syncing">Sinkroniseer…</string>
+    <string name="settings_sync_failed">Op hierdie toestel gestoor — sal sinkroniseer sodra jy weer aanlyn is.</string>
+    <string name="settings_section_app">App</string>
+    <string name="settings_about">Meer oor HiveMarket</string>
+    <string name="settings_log_out">Meld Af</string>
 </resources>
