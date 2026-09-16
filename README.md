@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Activity 1: App Concept and API Proposal
 PROG7314 | Group Worksheet | Maximum 4 students
 
@@ -92,3 +93,92 @@ If the project becomes too large, the Trust Score/Verified Seller badge feature 
 Lecturer Decision
 ☐ Approved     ☐ Approved with changes     ☐ Revise and resubmit
 Conditions or comments:
+=======
+# HiveMarket — Android Prototype
+
+A native Android prototype of **HiveMarket**, a campus marketplace app for verified students to buy, sell, and negotiate over second-hand goods within their own institution. This is a personal working branch built from the group's Part 1 design documents (Research Report + Planning and Design), to demonstrate a working milestone ahead of the group's shared Part 2 submission.
+
+## Status
+
+This milestone implements: **Login (Firebase Authentication)** and **Browse listings** with category filtering, backed by an offline-first Room cache. It is a foundation to build the rest of Part 2 on top of, not the final submission.
+
+## Architecture
+
+- **UI**: Jetpack Compose, single-Activity, `NavHost`-based navigation.
+- **Pattern**: MVVM. Screens hold no logic — they read `StateFlow` from a `ViewModel` and call its functions.
+- **DI**: Hilt (`@HiltAndroidApp`, `@HiltViewModel`, `@Inject`).
+- **Data layer**: Repository pattern. `ListingRepository` is the single source of truth, combining:
+  - **Room** (`HiveMarketDatabase`) — local cache, and the offline-draft queue for FR4/FR9.
+  - **Retrofit + kotlinx.serialization** (`HiveMarketApi`) — talks to the group's ASP.NET Core API on Render.
+- **Auth**: Firebase Authentication. An `OkHttp` interceptor attaches the current user's Firebase ID token to every API call automatically (see `NetworkModule`) — screens and view models never handle tokens directly.
+- **Push**: Firebase Cloud Messaging, received via `HiveMarketMessagingService` (stubbed — logs the payload, doesn't yet render a system notification).
+
+Every field name in the Kotlin data classes (`domain/Models.kt`) intentionally matches the Data Models and Schema Definitions table in the group's Planning and Design document (e.g. `listingID`, `categoryID`, `price`, not `id`/`amount`) — that consistency is what makes the request/response payloads actually line up with the group's REST API spec.
+
+```
+app/src/main/java/com/hivemarket/app/
+├── MainActivity.kt
+├── HiveMarketApp.kt              # Application class, Hilt entry point
+├── navigation/NavGraph.kt
+├── ui/
+│   ├── theme/                    # Compose theme, matches the brand colours from Part 1
+│   └── screens/
+│       ├── login/                 # LoginScreen + LoginViewModel
+│       └── browse/                # BrowseScreen + BrowseViewModel
+├── domain/Models.kt               # Shared data classes (User, Listing, Offer, Conversation, Message)
+├── data/
+│   ├── local/                     # Room database, DAO, entity
+│   ├── remote/                    # Retrofit API interface, FCM service
+│   └── repository/                # ListingRepository — the source of truth
+└── di/                             # Hilt modules (Network, Database)
+```
+
+## Setup
+
+You need a Firebase project and this app's client registered in it before it will run against real auth.
+
+1. Create/open a Firebase project at [console.firebase.google.com](https://console.firebase.google.com).
+2. Add an Android app with package name `com.hivemarket.app`.
+3. Download the resulting `google-services.json` and place it at `app/google-services.json` (this exact path — it's git-ignored, so it won't be committed).
+4. Enable **Email/Password** sign-in under Authentication → Sign-in method.
+5. Open the project in Android Studio (Koala or newer recommended) and let it sync.
+
+**Gradle/AGP/Kotlin versions — read this if the build fails on first sync.** This project targets **Gradle 9.6.0, AGP 9.3.0, and Kotlin 2.1.0**. These are recent as of September 2026 and move fast — if your Android Studio auto-generates a different Gradle wrapper version than what's committed here (check `gradle/wrapper/gradle-wrapper.properties`), or if sync fails with a version-compatibility error, run **Tools → AGP Upgrade Assistant** in Android Studio rather than hand-editing versions — it resolves the whole chain (AGP, Kotlin, Gradle) as a matched set automatically, capped to what your specific Android Studio release actually supports. Do not try to downgrade Gradle to fix an AGP mismatch if you're on a very recent JDK (26+) — Gradle 8.x cannot run its daemon on JDK 25/26 at all, so downgrading trades one broken build for another.
+
+**"Cannot add extension with name 'kotlin'" or a `ClassCastException` mentioning `ApplicationExtensionImpl` / `BaseExtension`.** AGP 9.0+ changed enough internally that the classic `org.jetbrains.kotlin.android` plugin this project uses can't apply cleanly on its own. `gradle.properties` sets two opt-outs to buy time before a real migration:
+- `android.builtInKotlin=false` — stops AGP's new built-in Kotlin support from registering its own `kotlin` extension and colliding with the explicit plugin.
+- `android.newDsl=false` — restores the old `BaseExtension`-based DSL types the classic Kotlin plugin expects internally, fixing the `ApplicationExtensionImpl ... cannot be cast to ... BaseExtension` error.
+
+If you still hit either error, confirm both lines are present in `gradle.properties`. **Both opt-outs are removed entirely in AGP 10** (originally targeted mid-2026, not yet shipped as of this writing) — this project will need a proper migration to AGP's built-in Kotlin and new DSL before upgrading past AGP 9.x. See the [built-in Kotlin migration guide](https://developer.android.com/build/migrate-to-built-in-kotlin) when there's time to do it properly; this isn't urgent for the current milestone.
+
+**Gradle wrapper jar**: the wrapper's binary jar (`gradle/wrapper/gradle-wrapper.jar`) isn't committed to this repo. Android Studio will offer to regenerate it automatically the first time you open the project — accept that prompt, or run `gradle wrapper --gradle-version 9.5.0` once if you have a local Gradle install.
+
+**Student email domain**: `LoginViewModel` currently checks for `@student.iie.ac.za` as a placeholder — update `ALLOWED_EMAIL_DOMAIN` to your actual institution's domain.
+
+**API base URL**: `NetworkModule.BASE_URL` points at a placeholder Render URL. Point it at `http://10.0.2.2:5000/` (the emulator's alias for your machine's `localhost`) while testing against a locally-run API, and swap to the real Render URL once it's deployed.
+
+## Running tests locally
+
+```
+./gradlew testDebugUnitTest
+```
+
+(or `gradle testDebugUnitTest` if you haven't generated the wrapper jar yet — see above.)
+
+## Continuous Integration
+
+`.github/workflows/android-ci.yml` runs on every push and pull request:
+1. Checks out the repo and sets up JDK 17 + Gradle 8.9.
+2. Copies the committed placeholder `google-services.json.example` into place — real Firebase credentials are never committed, but the Google Services Gradle plugin still needs *a* file at that path to let the build proceed.
+3. Runs `testDebugUnitTest`.
+4. Builds a debug APK and uploads it as a workflow artifact.
+
+This uses `gradle/actions/setup-gradle` rather than the committed `./gradlew` script, since the wrapper jar itself isn't checked in (see "Gradle wrapper" above) — CI provisions its own Gradle instead of depending on that file.
+
+## What's deliberately not built yet
+
+This is a milestone, not the finished Part 2 submission:
+- Listing Detail, Chat, Messages, Profile, and Settings screens all have designs and a matching data/API layer already in place, but no UI yet — each follows the same pattern as `BrowseScreen`.
+- The three user-defined features the group actually commits to for grading (see the Part 2 group plan) aren't implemented yet — Favourites and offline-draft creation have partial backing in the repository/database layer already (`createListingOfflineFirst`), but no screen calls them yet.
+- Biometric re-entry, FCM notification rendering, and full isiZulu/Afrikaans string coverage exist as stubs or partial resources, not finished features.
+>>>>>>> 3dbdbed (Initial commit: Login + Browse, Firebase Auth, offline-first repository, unit tests, CI)

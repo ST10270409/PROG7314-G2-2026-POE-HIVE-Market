@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Render's production API is HTTPS by default, so this is only needed
+         if you point BASE_URL at a local dev server (e.g. 10.0.2.2 on the
+         emulator) while Luke's endpoints are still being stood up. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+</network-security-config>

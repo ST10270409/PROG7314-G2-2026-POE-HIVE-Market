@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">HiveMarket</string>
+
+    <!-- Login -->
+    <string name="login_title">HiveMarket</string>
+    <string name="login_subtitle">Sign in with your student email</string>
+    <string name="login_email_hint">Student email</string>
+    <string name="login_password_hint">Password</string>
+    <string name="login_sign_in">Sign In</string>
+    <string name="login_or">— or —</string>
+    <string name="login_google">Continue with Google</string>
+    <string name="login_error_generic">Sign-in failed. Check your details and try again.</string>
+    <string name="login_error_empty">Enter your student email and password.</string>
+
+    <!-- Browse -->
+    <string name="browse_title">Browse</string>
+    <string name="browse_search_hint">Search HiveMarket</string>
+    <string name="browse_category_all">All</string>
+    <string name="browse_category_textbook">Textbook</string>
+    <string name="browse_category_electronics">Electronics</string>
+    <string name="browse_category_furniture">Furniture</string>
+    <string name="browse_empty">No listings match this category yet.</string>
+    <string name="browse_error">Couldn\'t load listings. Pull down to retry.</string>
+    <string name="browse_offline_banner">You\'re offline — showing cached listings.</string>
+
+    <!-- Bottom nav -->
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_sell">Sell</string>
+    <string name="nav_messages">Messages</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Listing detail -->
+    <string name="listing_make_offer">Make Offer</string>
+    <string name="listing_message">Message</string>
+    <string name="listing_verified_student">Verified Student</string>
+</resources>

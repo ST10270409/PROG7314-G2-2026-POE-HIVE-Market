@@ -1,0 +1,36 @@
+<resources>
+    <!-- Afrikaans (values-af) — FR6: two South African languages.
+         Starter translation for the prototype; have a fluent speaker
+         review the wording before Part 3. -->
+    <string name="app_name">HiveMarket</string>
+
+    <string name="login_title">HiveMarket</string>
+    <string name="login_subtitle">Meld aan met jou studente-e-pos</string>
+    <string name="login_email_hint">Studente-e-pos</string>
+    <string name="login_password_hint">Wagwoord</string>
+    <string name="login_sign_in">Meld Aan</string>
+    <string name="login_or">— of —</string>
+    <string name="login_google">Gaan voort met Google</string>
+    <string name="login_error_generic">Aanmelding het misluk. Gaan jou besonderhede na en probeer weer.</string>
+    <string name="login_error_empty">Voer jou studente-e-pos en wagwoord in.</string>
+
+    <string name="browse_title">Blaai</string>
+    <string name="browse_search_hint">Soek HiveMarket</string>
+    <string name="browse_category_all">Almal</string>
+    <string name="browse_category_textbook">Handboek</string>
+    <string name="browse_category_electronics">Elektronika</string>
+    <string name="browse_category_furniture">Meubels</string>
+    <string name="browse_empty">Geen items in hierdie kategorie nie.</string>
+    <string name="browse_error">Kon nie items laai nie. Trek af om weer te probeer.</string>
+    <string name="browse_offline_banner">Vanlyn — wys gekasete items.</string>
+
+    <string name="nav_home">Tuis</string>
+    <string name="nav_search">Soek</string>
+    <string name="nav_sell">Verkoop</string>
+    <string name="nav_messages">Boodskappe</string>
+    <string name="nav_profile">Profiel</string>
+
+    <string name="listing_make_offer">Maak Aanbod</string>
+    <string name="listing_message">Boodskap</string>
+    <string name="listing_verified_student">Geverifieerde Student</string>
+</resources>

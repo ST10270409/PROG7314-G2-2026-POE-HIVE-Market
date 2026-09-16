@@ -1,0 +1,36 @@
+<resources>
+    <!-- isiZulu (values-zu) — FR6: two South African languages.
+         This is a starter translation for the prototype; have a fluent speaker
+         review the wording before Part 3. -->
+    <string name="app_name">HiveMarket</string>
+
+    <string name="login_title">HiveMarket</string>
+    <string name="login_subtitle">Ngena ngemvume ngeemeyili yakho yesitshudeni</string>
+    <string name="login_email_hint">I-imeyili yesitshudeni</string>
+    <string name="login_password_hint">Iphasiwedi</string>
+    <string name="login_sign_in">Ngena</string>
+    <string name="login_or">— noma —</string>
+    <string name="login_google">Qhubeka ne-Google</string>
+    <string name="login_error_generic">Ukungena kwehlulekile. Hlola imininingwane yakho uphinde uzame futhi.</string>
+    <string name="login_error_empty">Faka i-imeyili yakho yesitshudeni nephasiwedi.</string>
+
+    <string name="browse_title">Cinga</string>
+    <string name="browse_search_hint">Sesha ku-HiveMarket</string>
+    <string name="browse_category_all">Konke</string>
+    <string name="browse_category_textbook">Incwadi</string>
+    <string name="browse_category_electronics">Ama-elektroniki</string>
+    <string name="browse_category_furniture">Ifenisha</string>
+    <string name="browse_empty">Akukho okutholakele kulesi sigaba okwamanje.</string>
+    <string name="browse_error">Ayikwazanga ukulayisha izinto. Hudula phansi ukuze uzame futhi.</string>
+    <string name="browse_offline_banner">Awuxhunyiwe ku-inthanethi — kukhonjiswa izinto ezigcinwe ngaphambilini.</string>
+
+    <string name="nav_home">Ekhaya</string>
+    <string name="nav_search">Sesha</string>
+    <string name="nav_sell">Thengisa</string>
+    <string name="nav_messages">Imilayezo</string>
+    <string name="nav_profile">Iphrofayela</string>
+
+    <string name="listing_make_offer">Yenza Isiphakamiso</string>
+    <string name="listing_message">Layezela</string>
+    <string name="listing_verified_student">Isitshudeni Esiqinisekisiwe</string>
+</resources>

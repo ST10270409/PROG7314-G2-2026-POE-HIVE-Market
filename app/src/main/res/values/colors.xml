@@ -1,0 +1,9 @@
+<resources>
+    <color name="hive_blue">#185FA5</color>
+    <color name="hive_blue_dark">#0C447C</color>
+    <color name="hive_blue_light">#E6F1FB</color>
+    <color name="hive_amber">#EF9F27</color>
+    <color name="hive_green">#3B6D11</color>
+    <color name="hive_background">#FFFFFF</color>
+    <color name="hive_surface_muted">#F1EFE8</color>
+</resources>

@@ -1,0 +1,18 @@
+*.iml
+.gradle/
+/local.properties
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Android Studio
+.idea/
+*.hprof
+
+# Real Firebase config — never commit your real one, see README setup steps.
+# The placeholder committed at app/google-services.json.example is safe to commit.
+app/google-services.json
+app/build/
