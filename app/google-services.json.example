@@ -1,0 +1,22 @@
+{
+  "_comment": "This is a PLACEHOLDER, not a real Firebase config. Copy this file to app/google-services.json and replace every value below with your own project's config from the Firebase console (Project settings -> Your apps -> google-services.json). The app will not build/run correctly with this placeholder in place — it exists only so the project structure is complete and so real config files never get committed by accident (see .gitignore).",
+  "project_info": {
+    "project_number": "000000000000",
+    "project_id": "hivemarket-placeholder",
+    "storage_bucket": "hivemarket-placeholder.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "android_client_info": { "package_name": "com.hivemarket.app" }
+      },
+      "oauth_client": [],
+      "api_key": [{ "current_key": "REPLACE_WITH_YOUR_OWN_API_KEY" }],
+      "services": {
+        "appinvite_service": { "other_platform_oauth_client": [] }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
