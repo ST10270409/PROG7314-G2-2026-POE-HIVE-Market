@@ -41,9 +41,21 @@ data class Listing(
     val datePosted: String,
     val sellerID: Int,
     val status: String,
+    // Populated by GET /api/listings/{listingID} (the detail endpoint) but
+    // not by GET /api/listings (the list endpoint) — lean lists, rich detail
+    // is a normal REST pattern. Left null for list-sourced Listing instances.
+    val sellerName: String? = null,
+    val sellerTrustScore: Int? = null,
     // Client-only field — never sent to or stored by the API. Set to true
     // when a listing is created offline and hasn't synced yet (FR4/FR9).
-    val pendingSync: Boolean = false
+    val pendingSync: Boolean = false,
+    // Client-only field — the local Room primary key. Two or more
+    // never-synced listings all have listingID = 0 (no real server ID
+    // assigned yet), so UI code that needs a unique key per item (e.g. a
+    // LazyVerticalGrid) MUST key on clientId when it's present, not on
+    // listingID alone — using listingID alone crashed with "Key '0' was
+    // already used" the moment a second offline draft existed.
+    val clientId: String? = null
 )
 
 @Serializable

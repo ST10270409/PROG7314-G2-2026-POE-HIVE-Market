@@ -1,4 +1,19 @@
-<<<<<<< HEAD
+# HiveMarket
+
+PROG7314 Group 2 — Portfolio of Evidence, Part 2 (App Prototype)
+
+Group: Nonjabulo Mathenjwa (ST10077892), Luke Lutchmiah (ST10288560), Lonwabo Gumede (ST10270409), Ayabonga Nzuza (ST10400793)
+
+---
+
+## Part 2 status
+
+This prototype implements: **Login + Register (Firebase Authentication)**, **Browse listings** with category filtering on an offline-first Room cache, **Settings** (FR2 — language with real runtime locale switching, notifications, biometric toggle, log out), **Listing Detail** (view + Make Offer + start/open a conversation), **Create Listing** (FR4/FR9, fully offline-first), **Offline Drafts** (view + manually retry unsynced listings), and **Chat** (real message history + sending). A persistent bottom navigation bar appears on every top-level screen.
+
+**The group's 3 chosen user-defined features for Part 2 grading**: Verified Seller / Trust Score badge, in-app secure chat, and offline listing drafts with auto-sync (manual retry — see "What's deliberately not built yet" below for the one honest gap in this).
+
+---
+
 Activity 1: App Concept and API Proposal
 PROG7314 | Group Worksheet | Maximum 4 students
 
@@ -93,27 +108,22 @@ If the project becomes too large, the Trust Score/Verified Seller badge feature 
 Lecturer Decision
 ☐ Approved     ☐ Approved with changes     ☐ Revise and resubmit
 Conditions or comments:
-=======
-# HiveMarket — Android Prototype
 
-A native Android prototype of **HiveMarket**, a campus marketplace app for verified students to buy, sell, and negotiate over second-hand goods within their own institution. This is a personal working branch built from the group's Part 1 design documents (Research Report + Planning and Design), to demonstrate a working milestone ahead of the group's shared Part 2 submission.
-
-## Status
-
-This milestone implements: **Login (Firebase Authentication)** and **Browse listings** with category filtering, backed by an offline-first Room cache. It is a foundation to build the rest of Part 2 on top of, not the final submission.
+---
 
 ## Architecture
 
-- **UI**: Jetpack Compose, single-Activity, `NavHost`-based navigation.
+- **UI**: Jetpack Compose, single-Activity, `NavHost`-based navigation, with a persistent bottom navigation bar (Home/Search → Browse, Sell → Create Listing, Messages/Profile → placeholders — see below).
 - **Pattern**: MVVM. Screens hold no logic — they read `StateFlow` from a `ViewModel` and call its functions.
 - **DI**: Hilt (`@HiltAndroidApp`, `@HiltViewModel`, `@Inject`).
 - **Data layer**: Repository pattern. `ListingRepository` is the single source of truth, combining:
   - **Room** (`HiveMarketDatabase`) — local cache, and the offline-draft queue for FR4/FR9.
-  - **Retrofit + kotlinx.serialization** (`HiveMarketApi`) — talks to the group's ASP.NET Core API on Render.
-- **Auth**: Firebase Authentication. An `OkHttp` interceptor attaches the current user's Firebase ID token to every API call automatically (see `NetworkModule`) — screens and view models never handle tokens directly.
+  - **Retrofit + kotlinx.serialization** (`HiveMarketApi`) — talks to the group's ASP.NET Core API.
+- **Auth**: Firebase Authentication. An `OkHttp` interceptor attaches the current user's Firebase ID token to every API call automatically (see `NetworkModule`) — screens and ViewModels never handle tokens directly.
 - **Push**: Firebase Cloud Messaging, received via `HiveMarketMessagingService` (stubbed — logs the payload, doesn't yet render a system notification).
+- **Settings/locale**: `SettingsStore` (SharedPreferences) is the offline-first local cache for FR2; language changes are applied at runtime via `LocaleSwitcher` (`AppCompatDelegate`), injected behind an interface specifically so it stays unit-testable.
 
-Every field name in the Kotlin data classes (`domain/Models.kt`) intentionally matches the Data Models and Schema Definitions table in the group's Planning and Design document (e.g. `listingID`, `categoryID`, `price`, not `id`/`amount`) — that consistency is what makes the request/response payloads actually line up with the group's REST API spec.
+Every field name in the Kotlin data classes (`domain/Models.kt`) intentionally matches the Data Models and Schema Definitions table in the group's Planning and Design document (e.g. `listingID`, `categoryID`, `price`, not `id`/`amount`) — that consistency is what makes the request/response payloads actually line up with the REST API.
 
 ```
 app/src/main/java/com/hivemarket/app/
@@ -121,16 +131,22 @@ app/src/main/java/com/hivemarket/app/
 ├── HiveMarketApp.kt              # Application class, Hilt entry point
 ├── navigation/NavGraph.kt
 ├── ui/
-│   ├── theme/                    # Compose theme, matches the brand colours from Part 1
+│   ├── theme/
 │   └── screens/
-│       ├── login/                 # LoginScreen + LoginViewModel
-│       └── browse/                # BrowseScreen + BrowseViewModel
+│       ├── login/                 # Login + Register
+│       ├── browse/
+│       ├── settings/
+│       ├── listingdetail/         # View + Make Offer + start Chat
+│       ├── createlisting/         # Offline-first (FR4/FR9)
+│       ├── offlinedrafts/         # View + manually retry unsynced listings
+│       ├── chat/
+│       └── common/                # BottomNavBar, ComingSoonScreen
 ├── domain/Models.kt               # Shared data classes (User, Listing, Offer, Conversation, Message)
 ├── data/
-│   ├── local/                     # Room database, DAO, entity
+│   ├── local/                     # Room database/DAO, SettingsStore, LocaleSwitcher
 │   ├── remote/                    # Retrofit API interface, FCM service
 │   └── repository/                # ListingRepository — the source of truth
-└── di/                             # Hilt modules (Network, Database)
+└── di/                             # Hilt modules (Network, Database, App)
 ```
 
 ## Setup
@@ -141,21 +157,19 @@ You need a Firebase project and this app's client registered in it before it wil
 2. Add an Android app with package name `com.hivemarket.app`.
 3. Download the resulting `google-services.json` and place it at `app/google-services.json` (this exact path — it's git-ignored, so it won't be committed).
 4. Enable **Email/Password** sign-in under Authentication → Sign-in method.
-5. Open the project in Android Studio (Koala or newer recommended) and let it sync.
+5. Open the project in Android Studio and let it sync.
 
-**Gradle/AGP/Kotlin versions — read this if the build fails on first sync.** This project targets **Gradle 9.6.0, AGP 9.3.0, and Kotlin 2.1.0**. These are recent as of September 2026 and move fast — if your Android Studio auto-generates a different Gradle wrapper version than what's committed here (check `gradle/wrapper/gradle-wrapper.properties`), or if sync fails with a version-compatibility error, run **Tools → AGP Upgrade Assistant** in Android Studio rather than hand-editing versions — it resolves the whole chain (AGP, Kotlin, Gradle) as a matched set automatically, capped to what your specific Android Studio release actually supports. Do not try to downgrade Gradle to fix an AGP mismatch if you're on a very recent JDK (26+) — Gradle 8.x cannot run its daemon on JDK 25/26 at all, so downgrading trades one broken build for another.
+**Gradle/AGP/Kotlin versions — read this if the build fails on first sync.** This project targets **Gradle 9.6.0, AGP 9.3.0, and Kotlin 2.1.0**. If your Android Studio auto-generates a different Gradle wrapper version, or sync fails with a version-compatibility error, run **Tools → AGP Upgrade Assistant** rather than hand-editing versions — it resolves the whole chain automatically, capped to what your specific Android Studio release supports. Do not downgrade Gradle to fix an AGP mismatch if you're on a recent JDK (25+) — older Gradle cannot run its daemon on it at all.
 
-**"Cannot add extension with name 'kotlin'" or a `ClassCastException` mentioning `ApplicationExtensionImpl` / `BaseExtension`.** AGP 9.0+ changed enough internally that the classic `org.jetbrains.kotlin.android` plugin this project uses can't apply cleanly on its own. `gradle.properties` sets two opt-outs to buy time before a real migration:
-- `android.builtInKotlin=false` — stops AGP's new built-in Kotlin support from registering its own `kotlin` extension and colliding with the explicit plugin.
-- `android.newDsl=false` — restores the old `BaseExtension`-based DSL types the classic Kotlin plugin expects internally, fixing the `ApplicationExtensionImpl ... cannot be cast to ... BaseExtension` error.
+**"Cannot add extension with name 'kotlin'" or a `ClassCastException` mentioning `ApplicationExtensionImpl` / `BaseExtension`.** `gradle.properties` sets two opt-outs (`android.builtInKotlin=false`, `android.newDsl=false`) to keep the classic Kotlin Android plugin working under AGP 9. Both are explained in comments right there in the file, and are removed in AGP 10 — a real migration will be needed eventually, not urgent now.
 
-If you still hit either error, confirm both lines are present in `gradle.properties`. **Both opt-outs are removed entirely in AGP 10** (originally targeted mid-2026, not yet shipped as of this writing) — this project will need a proper migration to AGP's built-in Kotlin and new DSL before upgrading past AGP 9.x. See the [built-in Kotlin migration guide](https://developer.android.com/build/migrate-to-built-in-kotlin) when there's time to do it properly; this isn't urgent for the current milestone.
+**"[Hilt] Provided Metadata instance has version..." or the same error mentioning `androidx.room.jarjarred`.** Two separate libraries (Dagger and Room) each bundle their own reader for Kotlin's metadata format, and each can fall behind a Kotlin version bump. `app/build.gradle.kts` already pins Hilt 2.57+ with an explicit `kotlin-metadata-jvm` override, and Room to 2.8.4 — see the comments at each dependency for what to do if this recurs after a future Kotlin upgrade.
 
-**Gradle wrapper jar**: the wrapper's binary jar (`gradle/wrapper/gradle-wrapper.jar`) isn't committed to this repo. Android Studio will offer to regenerate it automatically the first time you open the project — accept that prompt, or run `gradle wrapper --gradle-version 9.5.0` once if you have a local Gradle install.
+**Gradle wrapper jar**: not committed (binary files don't belong in source control without Git LFS). Android Studio regenerates it automatically on first open.
 
-**Student email domain**: `LoginViewModel` currently checks for `@student.iie.ac.za` as a placeholder — update `ALLOWED_EMAIL_DOMAIN` to your actual institution's domain.
+**Student email domain**: `LoginViewModel.ALLOWED_EMAIL_DOMAIN` is set to `@student.iie.ac.za` — update if your actual student email domain differs.
 
-**API base URL**: `NetworkModule.BASE_URL` points at a placeholder Render URL. Point it at `http://10.0.2.2:5000/` (the emulator's alias for your machine's `localhost`) while testing against a locally-run API, and swap to the real Render URL once it's deployed.
+**API base URL**: `NetworkModule.BASE_URL` needs to point at wherever the group's ASP.NET Core API is actually deployed. Update this once it's live.
 
 ## Running tests locally
 
@@ -163,22 +177,15 @@ If you still hit either error, confirm both lines are present in `gradle.propert
 ./gradlew testDebugUnitTest
 ```
 
-(or `gradle testDebugUnitTest` if you haven't generated the wrapper jar yet — see above.)
-
 ## Continuous Integration
 
-`.github/workflows/android-ci.yml` runs on every push and pull request:
-1. Checks out the repo and sets up JDK 17 + Gradle 8.9.
-2. Copies the committed placeholder `google-services.json.example` into place — real Firebase credentials are never committed, but the Google Services Gradle plugin still needs *a* file at that path to let the build proceed.
-3. Runs `testDebugUnitTest`.
-4. Builds a debug APK and uploads it as a workflow artifact.
-
-This uses `gradle/actions/setup-gradle` rather than the committed `./gradlew` script, since the wrapper jar itself isn't checked in (see "Gradle wrapper" above) — CI provisions its own Gradle instead of depending on that file.
+`.github/workflows/android-ci.yml` runs on every push and pull request: sets up JDK 17 + Gradle 9.6.0, copies the committed placeholder `google-services.json.example` into place (real Firebase credentials are never committed), runs the unit tests, builds a debug APK, and uploads it as a workflow artifact.
 
 ## What's deliberately not built yet
 
-This is a milestone, not the finished Part 2 submission:
-- Listing Detail, Chat, Messages, Profile, and Settings screens all have designs and a matching data/API layer already in place, but no UI yet — each follows the same pattern as `BrowseScreen`.
-- The three user-defined features the group actually commits to for grading (see the Part 2 group plan) aren't implemented yet — Favourites and offline-draft creation have partial backing in the repository/database layer already (`createListingOfflineFirst`), but no screen calls them yet.
-- Biometric re-entry, FCM notification rendering, and full isiZulu/Afrikaans string coverage exist as stubs or partial resources, not finished features.
->>>>>>> 3dbdbed (Initial commit: Login + Browse, Firebase Auth, offline-first repository, unit tests, CI)
+- **Messages (inbox) and Profile are placeholders** — the bottom nav routes to them, but there's no real screen behind either. Chat itself (reached from Listing Detail's "Message" button) is fully built.
+- **Offline Drafts sync is manual-retry only, not automatic.** `WorkManager` is a dependency and initializes at startup, but no `Worker` class has been implemented to retry pending listings automatically when connectivity returns. Since offline drafts is one of the group's 3 chosen features, finishing this (a real `CoroutineWorker` with a `NetworkType.CONNECTED` constraint) is worth prioritising.
+- **Listing Detail, Create Listing, and Chat use hardcoded English strings**, not string resources — Login/Browse/Settings are properly localized (en/zu/af); these three aren't yet.
+- Favourites and a dedicated search bar (beyond category chips) were not chosen as one of the 3 features and remain unbuilt.
+- No real biometric re-entry gate yet — the Settings toggle exists, nothing enforces it.
+- Photo upload is a UI stub — Firebase Storage isn't wired in.

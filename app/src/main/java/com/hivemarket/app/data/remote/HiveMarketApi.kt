@@ -50,6 +50,17 @@ interface HiveMarketApi {
     @GET("api/conversations")
     suspend fun getConversations(): Response<ConversationsResponse>
 
+    // Not in the original Section 5 endpoint table — added to support the
+    // Listing Detail "Message" button, which needs a conversation to exist
+    // (or be created) before a message can be sent into it. Update the
+    // Planning and Design document's endpoint table to match if this ships
+    // to the group repo.
+    @POST("api/conversations")
+    suspend fun startConversation(@Body body: StartConversationRequest): Response<Conversation>
+
+    @GET("api/conversations/{conversationID}/messages")
+    suspend fun getMessages(@Path("conversationID") conversationID: Int): Response<MessagesResponse>
+
     @POST("api/conversations/{conversationID}/messages")
     suspend fun sendMessage(
         @Path("conversationID") conversationID: Int,
@@ -93,6 +104,12 @@ data class CreateListingResponse(val listingID: Int, val status: String, val dat
 
 @Serializable
 data class ConversationsResponse(val items: List<Conversation>)
+
+@Serializable
+data class StartConversationRequest(val listingID: Int)
+
+@Serializable
+data class MessagesResponse(val items: List<Message>)
 
 @Serializable
 data class SendMessageRequest(val content: String)

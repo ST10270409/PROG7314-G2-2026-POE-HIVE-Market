@@ -32,6 +32,8 @@ data class ListingEntity(
     val image: String? = null,
     val sellerID: Int,
     val status: String,
+    val sellerName: String? = null,
+    val sellerTrustScore: Int? = null,
     val pendingSync: Boolean = false,
     val cachedAt: Long = System.currentTimeMillis()
 )
@@ -42,8 +44,17 @@ interface ListingDao {
     @Query("SELECT * FROM listings ORDER BY cachedAt DESC")
     fun observeAll(): Flow<List<ListingEntity>>
 
+    @Query("SELECT * FROM listings WHERE serverListingId = :listingID LIMIT 1")
+    suspend fun getById(listingID: Int): ListingEntity?
+
     @Query("SELECT * FROM listings WHERE pendingSync = 1")
     suspend fun getPendingSync(): List<ListingEntity>
+
+    // Flow version of the above — backs the Offline Drafts screen, which
+    // needs to update live as WorkManager/manual retries clear pendingSync,
+    // not just read it once.
+    @Query("SELECT * FROM listings WHERE pendingSync = 1 ORDER BY cachedAt DESC")
+    fun observePendingSync(): Flow<List<ListingEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(listing: ListingEntity)
@@ -58,7 +69,7 @@ interface ListingDao {
     suspend fun clearSyncedCache()
 }
 
-@Database(entities = [ListingEntity::class], version = 1, exportSchema = false)
+@Database(entities = [ListingEntity::class], version = 2, exportSchema = false)
 abstract class HiveMarketDatabase : RoomDatabase() {
     abstract fun listingDao(): ListingDao
 }

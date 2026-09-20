@@ -1,5 +1,6 @@
 package com.hivemarket.app.ui.screens.browse
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,9 +15,13 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -33,21 +38,40 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.hivemarket.app.R
 import com.hivemarket.app.domain.Listing
+import com.hivemarket.app.ui.screens.common.HiveMarketBottomNav
 
 /**
- * Home tab: category dropdown/chips + a two-column grid, matching the
- * Browse wireframe in the Planning and Design document. This screen reads
- * straight from [BrowseViewModel]'s offline-first state, so it renders
- * cached listings immediately and just shows an "offline" banner if the
- * network refresh underneath it fails — it never blocks on the network.
+ * Home/Search tab: category chips + a two-column grid, matching the Browse
+ * wireframe. Reads straight from [BrowseViewModel]'s offline-first state,
+ * so it renders cached listings immediately and just shows an "offline"
+ * banner if the network refresh underneath it fails.
+ *
+ * Now includes the persistent bottom nav bar (previously missing from
+ * every screen) and clickable cards that navigate to Listing Detail.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BrowseScreen(viewModel: BrowseViewModel = hiltViewModel()) {
+fun BrowseScreen(
+    currentRoute: String? = null,
+    onNavigateBottomNav: (String) -> Unit = {},
+    onOpenSettings: () -> Unit = {},
+    onOpenListing: (Int) -> Unit = {},
+    viewModel: BrowseViewModel = hiltViewModel()
+) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.browse_title)) }) }
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.browse_title)) },
+                actions = {
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                    }
+                }
+            )
+        },
+        bottomBar = { HiveMarketBottomNav(currentRoute = currentRoute, onNavigate = onNavigateBottomNav) }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
 
@@ -80,7 +104,7 @@ fun BrowseScreen(viewModel: BrowseViewModel = hiltViewModel()) {
                         )
                     }
                     else -> {
-                        ListingGrid(listings = uiState.listings)
+                        ListingGrid(listings = uiState.listings, onOpenListing = onOpenListing)
                     }
                 }
             }
@@ -111,22 +135,22 @@ private fun CategoryChipRow(selected: Category, onSelect: (Category) -> Unit) {
 }
 
 @Composable
-private fun ListingGrid(listings: List<Listing>) {
+private fun ListingGrid(listings: List<Listing>, onOpenListing: (Int) -> Unit) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        gridItems(listings, key = { it.listingID }) { listing ->
-            ListingCard(listing)
+        gridItems(listings, key = { it.clientId ?: it.listingID }) { listing ->
+            ListingCard(listing, onClick = { onOpenListing(listing.listingID) })
         }
     }
 }
 
 @Composable
-private fun ListingCard(listing: Listing) {
-    Card(shape = RoundedCornerShape(8.dp)) {
+private fun ListingCard(listing: Listing, onClick: () -> Unit) {
+    Card(shape = RoundedCornerShape(8.dp), modifier = Modifier.clickable(onClick = onClick)) {
         Column(modifier = Modifier.padding(8.dp)) {
             Surface(
                 color = MaterialTheme.colorScheme.surfaceVariant,

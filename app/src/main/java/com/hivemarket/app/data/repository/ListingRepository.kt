@@ -37,6 +37,117 @@ class ListingRepository @Inject constructor(
         dao.observeAll().map { entities -> entities.map { it.toDomain() } }
 
     /**
+     * Live list of listings still waiting to sync — backs the Offline
+     * Drafts screen. Updates automatically as [retrySync] (or a future
+     * WorkManager job) clears pendingSync on each row.
+     */
+    fun observePendingDrafts(): Flow<List<Listing>> =
+        dao.observePendingSync().map { entities -> entities.map { it.toDomain() } }
+
+    /**
+     * Manually re-attempts syncing one pending draft. There is no
+     * automatic background retry yet (see the README's "what's not built"
+     * section — WorkManager is a dependency and initializes, but no actual
+     * sync Worker has been implemented), so this manual retry is currently
+     * the only way a draft clears pendingSync after its first attempt
+     * (made at creation time in createListingOfflineFirst) fails.
+     */
+    suspend fun retrySync(clientId: String): ApiResult<Unit> {
+        val entity = dao.getPendingSync().firstOrNull { it.clientId == clientId }
+            ?: return ApiResult.Error("Draft not found")
+        return try {
+            val response = api.createListing(
+                CreateListingRequest(
+                    clientId = entity.clientId, title = entity.title, description = entity.description,
+                    price = entity.price, categoryID = entity.categoryID, condition = entity.condition
+                )
+            )
+            if (response.isSuccessful) {
+                response.body()?.let { dao.markSynced(entity.clientId, it.listingID) }
+                ApiResult.Success(Unit)
+            } else {
+                ApiResult.Error("Server returned ${response.code()}")
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(e.message ?: "Network error")
+        }
+    }
+
+    /**
+     * Fetches a single listing's full detail (seller name/trust score
+     * included — see the comment on Listing.sellerName). Falls back to
+     * whatever's in the local cache if the network call fails, same
+     * offline-first shape as refreshListings, so Listing Detail doesn't go
+     * blank just because the device is briefly offline.
+     */
+    suspend fun getListingDetail(listingID: Int): ApiResult<Listing> {
+        return try {
+            val response = api.getListing(listingID)
+            if (response.isSuccessful && response.body() != null) {
+                val listing = response.body()!!
+                dao.upsert(listing.toEntity(pendingSync = false))
+                ApiResult.Success(listing)
+            } else {
+                Log.w(TAG, "GET /api/listings/$listingID failed: ${response.code()}")
+                fallBackToCache(listingID)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "GET /api/listings/$listingID failed, trying cache", e)
+            fallBackToCache(listingID)
+        }
+    }
+
+    private suspend fun fallBackToCache(listingID: Int): ApiResult<Listing> {
+        val cached = dao.getById(listingID)
+        return if (cached != null) ApiResult.Success(cached.toDomain())
+        else ApiResult.Error("Listing not available offline")
+    }
+
+    /**
+     * FR11: making an offer is online-only (unlike listings, offers aren't
+     * designed to be created offline in the Planning and Design document —
+     * a price negotiation depends on the seller seeing it, so there's no
+     * useful "pending" state to show while offline the way there is for a
+     * draft listing).
+     */
+    suspend fun makeOffer(listingID: Int, amount: Double, message: String?): ApiResult<Offer> {
+        return try {
+            val response = api.makeOffer(listingID, MakeOfferRequest(amount = amount, message = message))
+            if (response.isSuccessful && response.body() != null) {
+                ApiResult.Success(response.body()!!)
+            } else {
+                ApiResult.Error("Server returned ${response.code()}")
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(e.message ?: "Network error")
+        }
+    }
+
+    /**
+     * Finds an existing conversation for this listing if one exists,
+     * otherwise starts a new one — this is what backs the "Message" button
+     * on Listing Detail. A real backend would likely do this find-or-create
+     * step server-side in one call; it's done here as two calls only
+     * because the endpoint table doesn't (yet) define a combined one.
+     */
+    suspend fun startOrGetConversation(listingID: Int): ApiResult<Conversation> {
+        return try {
+            val existing = api.getConversations()
+            val match = existing.body()?.items?.firstOrNull { it.listingID == listingID }
+            if (match != null) return ApiResult.Success(match)
+
+            val response = api.startConversation(StartConversationRequest(listingID))
+            if (response.isSuccessful && response.body() != null) {
+                ApiResult.Success(response.body()!!)
+            } else {
+                ApiResult.Error("Server returned ${response.code()}")
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(e.message ?: "Network error")
+        }
+    }
+
+    /**
      * Refreshes the cache from GET /api/listings. On failure, callers still
      * have whatever's already cached via [observeCachedListings] — this is
      * the offline-first behaviour FR4 describes.
@@ -126,6 +237,8 @@ private fun Listing.toEntity(pendingSync: Boolean) = ListingEntity(
     image = image,
     sellerID = sellerID,
     status = status,
+    sellerName = sellerName,
+    sellerTrustScore = sellerTrustScore,
     pendingSync = pendingSync
 )
 
@@ -140,5 +253,8 @@ private fun ListingEntity.toDomain() = Listing(
     datePosted = "",
     sellerID = sellerID,
     status = status,
-    pendingSync = pendingSync
+    sellerName = sellerName,
+    sellerTrustScore = sellerTrustScore,
+    pendingSync = pendingSync,
+    clientId = clientId
 )
