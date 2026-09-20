@@ -5,7 +5,11 @@ import com.hivemarket.app.data.local.ListingDao
 import com.hivemarket.app.data.local.ListingEntity
 import com.hivemarket.app.data.remote.CreateListingRequest
 import com.hivemarket.app.data.remote.HiveMarketApi
+import com.hivemarket.app.data.remote.MakeOfferRequest
+import com.hivemarket.app.data.remote.StartConversationRequest
+import com.hivemarket.app.domain.Conversation
 import com.hivemarket.app.domain.Listing
+import com.hivemarket.app.domain.Offer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.UUID
