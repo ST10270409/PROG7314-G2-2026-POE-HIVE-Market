@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -15,6 +16,26 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.HiveMarket"
         android:networkSecurityConfig="@xml/network_security_config">
+
+        <!-- WorkManager normally auto-initializes itself via this provider,
+             using a default Configuration with no Hilt awareness. Since
+             SyncPendingListingsWorker needs Hilt to inject ListingRepository
+             into it, WorkManager instead needs OUR Configuration (see
+             HiveMarketApp.workManagerConfiguration) — this override removes
+             the automatic one so ours is used instead. Without this,
+             WorkManager silently uses the wrong factory and every
+             SyncPendingListingsWorker run crashes with a "no default
+             constructor" error the first time it's actually invoked. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
         <activity
             android:name=".MainActivity"
