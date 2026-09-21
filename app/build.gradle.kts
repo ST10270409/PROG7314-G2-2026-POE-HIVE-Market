@@ -34,6 +34,20 @@ android {
         buildConfig = true
     }
 
+    // JVM unit tests (testDebugUnitTest) run against a stub android.jar
+    // where framework methods throw by default rather than doing nothing —
+    // android.util.Log specifically throws "RuntimeException: Method d not
+    // mocked" the moment any code under test calls Log.d/i/w/e, which is
+    // nearly every method in every ViewModel in this project. This setting
+    // makes stubbed Android methods return their default value (0/false/null)
+    // instead of throwing, which is what every other option (mocking Log
+    // per test file, or adding Robolectric) would otherwise be needed for.
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
+    }
+
     // NOTE: as of Kotlin 2.0+, the Compose compiler is a standalone Kotlin
     // compiler plugin (org.jetbrains.kotlin.plugin.compose, applied above)
     // rather than something AGP bundles — this composeOptions block is kept
@@ -113,6 +127,10 @@ dependencies {
 
     // WorkManager (background sync — FR4)
     implementation("androidx.work:work-runtime-ktx:2.9.1")
+    // Lets a Worker use @Inject/Hilt (needed so SyncPendingListingsWorker can
+    // get a real ListingRepository instead of constructing its own).
+    implementation("androidx.hilt:hilt-work:1.2.0")
+    kapt("androidx.hilt:hilt-compiler:1.2.0")
 
     // Biometric (FR3)
     implementation("androidx.biometric:biometric-ktx:1.2.0-alpha05")
