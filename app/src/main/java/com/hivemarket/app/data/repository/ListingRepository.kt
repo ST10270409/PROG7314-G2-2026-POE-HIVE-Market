@@ -1,4 +1,3 @@
-
 package com.hivemarket.app.data.repository
 
 import android.util.Log
@@ -443,7 +442,118 @@ class ListingRepository @Inject constructor(
         }
     }
 
-    // --------------------------------------------------------- // FAVOURITES // --------------------------------------------------------- /** * Observes all locally saved favourites. * * The UI can collect this Flow to automatically update * when favourites are added or removed. */ fun getFavouritesFromDb(): Flow<List<FavouriteEntity>> = favouriteDao.getAllFavourites() /** * Checks whether a specific listing is currently favourited. */ fun isListingFavourite( listingID: Int ): Flow<Boolean> = favouriteDao.isFavourite(listingID.toString()) /** * Toggles a listing's favourite state. * * The local Room database is updated first so the UI * responds immediately. The backend is then updated. */ suspend fun toggleFavourite( listing: Listing, userId: String ): Boolean { // Room stores listing IDs as Strings val listingIdStr = listing.listingID.toString() // Backend expects the user ID as an Int val userIdInt = userId.toIntOrNull() ?: 0 val currentlyFavourite = favouriteDao.isFavouriteSync(listingIdStr) return if (currentlyFavourite) { // Remove locally first favouriteDao.deleteFavouriteById(listingIdStr) // Remove from backend try { api.removeFavourite( userId = userIdInt, listingId = listing.listingID ) } catch (e: Exception) { Log.w( TAG, "Failed to remove favourite on backend", e ) } false } else { // Add locally first val favourite = FavouriteEntity( listingId = listingIdStr, title = listing.title, price = listing.price, imageUrl = listing.image, isAvailable = true ) favouriteDao.insertFavourite(favourite) // Add to backend try { api.addFavourite( FavouriteRequest( listingId = listing.listingID, userId = userIdInt ) ) } catch (e: Exception) { Log.w( TAG, "Failed to add favourite on backend", e ) } true } } /** * Downloads the user's favourites from the backend * and caches them locally. */ suspend fun syncFavouritesFromRemote( userId: String ) { // Backend expects an Int user ID val userIdInt = userId.toIntOrNull() ?: 0 try { val response = api.getFavourites(userIdInt) if (response.isSuccessful && response.body() != null) { val remoteFavourites = response.body()!! remoteFavourites.forEach { listing -> favouriteDao.insertFavourite( FavouriteEntity( listingId = listing.listingID.toString(), title = listing.title, price = listing.price, imageUrl = listing.image, isAvailable = true ) ) } Log.d( TAG, "Synced ${remoteFavourites.size} favourites from backend" ) } else { Log.w( TAG, "Failed to fetch favourites: ${response.code()}" ) } } catch (e: Exception) { Log.w( TAG, "Failed to sync favourites from remote", e ) } }
+    // ---------------------------------------------------------
+    // FAVOURITES
+    // ---------------------------------------------------------
+
+    /**
+     * Observes all locally saved favourites.
+     */
+    fun getFavouritesFromDb(): Flow<List<FavouriteEntity>> =
+        favouriteDao.getAllFavourites()
+
+    /**
+     * Checks whether a specific listing is currently favourited.
+     */
+    fun isListingFavourite(
+        listingID: Int
+    ): Flow<Boolean> =
+        favouriteDao.isFavourite(listingID.toString())
+
+    /**
+     * Toggles a listing's favourite state.
+     */
+    suspend fun toggleFavourite(
+        listing: Listing,
+        userId: String
+    ): Boolean {
+        val listingIdStr = listing.listingID.toString()
+        val listingIdInt = listing.listingID
+        val userIdInt = userId.toIntOrNull() ?: 0
+
+        val currentlyFavourite = favouriteDao.isFavouriteSync(listingIdStr)
+
+        return if (currentlyFavourite) {
+
+            // Remove locally first
+            favouriteDao.deleteFavouriteById(listingIdStr)
+
+            // Remove from backend (expects String parameters)
+            try {
+                api.removeFavourite(
+                    userId = userId,
+                    listingId = listingIdStr
+                )
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to remove favourite on backend", e)
+            }
+
+            false
+
+        } else {
+
+            // Add locally first
+            val favourite = FavouriteEntity(
+                listingId = listingIdStr,
+                title = listing.title,
+                price = listing.price,
+                imageUrl = listing.image,
+                isAvailable = true
+            )
+
+            favouriteDao.insertFavourite(favourite)
+
+            // Add to backend (FavouriteRequest expects Int parameters)
+            try {
+                api.addFavourite(
+                    FavouriteRequest(
+                        listingId = listingIdInt,
+                        userId = userIdInt
+                    )
+                )
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to add favourite on backend", e)
+            }
+
+            true
+        }
+    }
+
+    /**
+     * Downloads user favourites from backend and caches them locally.
+     */
+    suspend fun syncFavouritesFromRemote(
+        userId: String
+    ) {
+        try {
+            // api.getFavourites expects String
+            val response = api.getFavourites(userId)
+
+            if (response.isSuccessful && response.body() != null) {
+                val remoteFavourites = response.body()!!
+
+                remoteFavourites.forEach { listing ->
+                    favouriteDao.insertFavourite(
+                        FavouriteEntity(
+                            listingId = listing.listingID.toString(),
+                            title = listing.title,
+                            price = listing.price,
+                            imageUrl = listing.image,
+                            isAvailable = true
+                        )
+                    )
+                }
+
+                Log.d(TAG, "Synced ${remoteFavourites.size} favourites from backend")
+            } else {
+                Log.w(TAG, "Failed to fetch favourites: ${response.code()}")
+            }
+
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to sync favourites from remote", e)
+        }
+    }
+
     // ---------------------------------------------------------
     // LISTING ↔ ROOM MAPPERS
     // ---------------------------------------------------------
@@ -489,4 +599,3 @@ class ListingRepository @Inject constructor(
         clientId = clientId
     )
 }
-

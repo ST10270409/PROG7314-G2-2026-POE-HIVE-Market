@@ -65,18 +65,18 @@ interface HiveMarketApi {
     @GET("api/favourites/{userId}")
     suspend fun getFavourites(
         @Path("userId") userId: String
-    ): Response<List<Listing>>
+    ): retrofit2.Response<List<Listing>>
 
     @POST("api/favourites")
     suspend fun addFavourite(
         @Body request: FavouriteRequest
-    ): Response<FavouriteResponse>
+    ): FavouriteResponse
 
     @DELETE("api/favourites/{userId}/{listingId}")
     suspend fun removeFavourite(
         @Path("userId") userId: String,
         @Path("listingId") listingId: String
-    ): Response<FavouriteResponse>
+    ): FavouriteResponse
 
     // ---------------- CONVERSATIONS ----------------
 
