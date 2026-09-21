@@ -14,7 +14,7 @@ android {
 
     defaultConfig {
         applicationId = "com.hivemarket.app"
-        minSdk = 26
+        minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0-prototype"
