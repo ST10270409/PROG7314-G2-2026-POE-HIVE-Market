@@ -3,6 +3,7 @@ package com.hivemarket.app.ui.screens.createlisting
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hivemarket.app.data.local.SyncScheduler
 import com.hivemarket.app.data.repository.ListingRepository
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,10 +26,12 @@ data class CreateListingUiState(
 
 /**
  * Backs Create Listing — the primary offline-capable screen (FR4/FR9).
- * All the offline-first behaviour (write locally first, sync in the
- * background, retry via WorkManager if the immediate attempt fails) lives
- * in ListingRepository.createListingOfflineFirst; this ViewModel is mostly
- * form-state management and validation on top of it.
+ * All the offline-first behaviour (write locally first, sync immediately
+ * if online, and schedule a real WorkManager retry constrained on
+ * connectivity if that immediate attempt fails or the device is offline)
+ * lives in ListingRepository.createListingOfflineFirst plus
+ * SyncScheduler; this ViewModel is mostly form-state management and
+ * validation on top of it.
  *
  * `sellerID` comes from the currently signed-in Firebase user rather than
  * a hardcoded value — see the TODO on how that ID maps to the backend's
@@ -37,7 +40,8 @@ data class CreateListingUiState(
 @HiltViewModel
 class CreateListingViewModel @Inject constructor(
     private val repository: ListingRepository,
-    private val firebaseAuth: FirebaseAuth
+    private val firebaseAuth: FirebaseAuth,
+    private val syncScheduler: SyncScheduler
 ) : ViewModel() {
 
     companion object {
@@ -83,6 +87,15 @@ class CreateListingViewModel @Inject constructor(
                 sellerID = sellerID
             )
             Log.d(TAG, "Listing written locally as $clientId (pendingSync until confirmed)")
+
+            // Schedules a real, connectivity-constrained sync attempt via
+            // WorkManager — this is what makes Offline Drafts actually
+            // auto-sync rather than relying solely on the immediate
+            // attempt inside createListingOfflineFirst (which does nothing
+            // useful while offline) or the manual Retry button on the
+            // Offline Drafts screen.
+            syncScheduler.scheduleSync()
+
             _uiState.value = CreateListingUiState(submittedClientId = clientId)
         }
     }
