@@ -1,10 +1,12 @@
 package com.hivemarket.app.ui.screens.createlisting
 
 import com.google.firebase.auth.FirebaseAuth
+import com.hivemarket.app.data.local.SyncScheduler
 import com.hivemarket.app.data.repository.ListingRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -28,13 +30,14 @@ class CreateListingViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val repository: ListingRepository = mockk()
     private val firebaseAuth: FirebaseAuth = mockk(relaxed = true)
+    private val syncScheduler: SyncScheduler = mockk(relaxed = true)
     private lateinit var viewModel: CreateListingViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         coEvery { repository.createListingOfflineFirst(any(), any(), any(), any(), any(), any()) } returns "client-guid-1"
-        viewModel = CreateListingViewModel(repository, firebaseAuth)
+        viewModel = CreateListingViewModel(repository, firebaseAuth, syncScheduler)
     }
 
     @After
@@ -83,5 +86,16 @@ class CreateListingViewModelTest {
         }
         assertEquals("client-guid-1", viewModel.uiState.value.submittedClientId)
         assertEquals("", viewModel.uiState.value.title) // form reset after a successful submit
+    }
+
+    @Test
+    fun `a valid submission schedules a WorkManager sync attempt`() = runTest {
+        viewModel.setTitle("Desk lamp")
+        viewModel.setPrice("80")
+
+        viewModel.submit()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify { syncScheduler.scheduleSync() }
     }
 }

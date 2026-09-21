@@ -51,7 +51,7 @@ class ListingRepositoryTest {
     @Test
     fun `refreshListings on a successful response caches the listings and returns Success`() = runTest {
         coEvery { api.getListings(query = null, categoryID = null) } returns
-            Response.success(ListingsResponse(items = listOf(sampleListing)))
+                Response.success(ListingsResponse(items = listOf(sampleListing)))
 
         val result = repository.refreshListings()
 
@@ -64,7 +64,7 @@ class ListingRepositoryTest {
     @Test
     fun `refreshListings on a server error response returns Error and does not touch the cache`() = runTest {
         coEvery { api.getListings(query = null, categoryID = null) } returns
-            Response.error(500, "server error".toResponseBody("text/plain".toMediaType()))
+                Response.error(500, "server error".toResponseBody("text/plain".toMediaType()))
 
         val result = repository.refreshListings()
 
@@ -86,7 +86,7 @@ class ListingRepositoryTest {
     @Test
     fun `refreshListings passes the selected category through to the API call`() = runTest {
         coEvery { api.getListings(query = null, categoryID = 2) } returns
-            Response.success(ListingsResponse(items = emptyList()))
+                Response.success(ListingsResponse(items = emptyList()))
 
         repository.refreshListings(categoryID = 2)
 
@@ -96,7 +96,7 @@ class ListingRepositoryTest {
     @Test
     fun `createListingOfflineFirst writes a pendingSync row before attempting to sync`() = runTest {
         coEvery { api.createListing(any()) } returns
-            Response.success(CreateListingResponse(listingID = 9, status = "Active", datePosted = "2026-08-01T10:00:00Z"))
+                Response.success(CreateListingResponse(listingID = 9, status = "Active", datePosted = "2026-08-01T10:00:00Z"))
 
         repository.createListingOfflineFirst(
             title = "Desk lamp",
@@ -115,5 +115,45 @@ class ListingRepositoryTest {
                 it.title == "Desk lamp" && it.pendingSync
             })
         }
+    }
+
+    private val pendingEntity = ListingEntity(
+        clientId = "guid-1", title = "Desk lamp", description = "Works fine",
+        categoryID = 3, price = 80.0, condition = "Used - Good", sellerID = 1,
+        status = "Active", pendingSync = true
+    )
+
+    @Test
+    fun `syncAllPendingDrafts syncs every pending entity and marks each synced on success`() = runTest {
+        coEvery { dao.getPendingSync() } returns listOf(pendingEntity)
+        coEvery { api.createListing(any()) } returns
+                Response.success(CreateListingResponse(listingID = 5, status = "Active", datePosted = "2026-08-01T10:00:00Z"))
+
+        val failures = repository.syncAllPendingDrafts()
+
+        assertTrue(failures == 0)
+        coVerify { dao.markSynced("guid-1", 5) }
+    }
+
+    @Test
+    fun `syncAllPendingDrafts counts failures instead of throwing when the API rejects a draft`() = runTest {
+        coEvery { dao.getPendingSync() } returns listOf(pendingEntity)
+        coEvery { api.createListing(any()) } returns
+                Response.error(500, "server error".toResponseBody("text/plain".toMediaType()))
+
+        val failures = repository.syncAllPendingDrafts()
+
+        assertTrue(failures == 1)
+        coVerify(exactly = 0) { dao.markSynced(any(), any()) }
+    }
+
+    @Test
+    fun `syncAllPendingDrafts with nothing pending does no work and reports zero failures`() = runTest {
+        coEvery { dao.getPendingSync() } returns emptyList()
+
+        val failures = repository.syncAllPendingDrafts()
+
+        assertTrue(failures == 0)
+        coVerify(exactly = 0) { api.createListing(any()) }
     }
 }
