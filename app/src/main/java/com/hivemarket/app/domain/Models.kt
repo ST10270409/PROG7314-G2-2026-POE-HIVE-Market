@@ -1,3 +1,8 @@
+@file:OptIn(
+    kotlinx.serialization.ExperimentalSerializationApi::class,
+    kotlinx.serialization.InternalSerializationApi::class
+)
+
 package com.hivemarket.app.domain
 
 import kotlinx.serialization.SerialName
@@ -9,13 +14,22 @@ import kotlinx.serialization.Serializable
  * Field names here deliberately match the Data Models and Schema Definitions
  * table in the Planning and Design document (Section 7) and the corrected
  * UML class diagram — e.g. `listingID`, `categoryID`, `price`, not `id`/`amount`.
+ *
  * Keeping these in sync with the API contract is what makes the
  * request/response payloads in Section 5 actually work end to end.
  */
 
-enum class ListingStatus { Active, Sold, Reserved, Removed }
-enum class OfferStatus { Pending, Accepted, Rejected, Withdrawn }
-enum class MessageStatus { Sent, Delivered, Read }
+enum class ListingStatus {
+    Active, Sold, Reserved, Removed
+}
+
+enum class OfferStatus {
+    Pending, Accepted, Rejected, Withdrawn
+}
+
+enum class MessageStatus {
+    Sent, Delivered, Read
+}
 
 @Serializable
 data class User(
@@ -41,14 +55,17 @@ data class Listing(
     val datePosted: String,
     val sellerID: Int,
     val status: String,
+
     // Populated by GET /api/listings/{listingID} (the detail endpoint) but
     // not by GET /api/listings (the list endpoint) — lean lists, rich detail
     // is a normal REST pattern. Left null for list-sourced Listing instances.
     val sellerName: String? = null,
     val sellerTrustScore: Int? = null,
+
     // Client-only field — never sent to or stored by the API. Set to true
     // when a listing is created offline and hasn't synced yet (FR4/FR9).
     val pendingSync: Boolean = false,
+
     // Client-only field — the local Room primary key. Two or more
     // never-synced listings all have listingID = 0 (no real server ID
     // assigned yet), so UI code that needs a unique key per item (e.g. a
@@ -84,7 +101,9 @@ data class Conversation(
     val sellerID: Int,
     val lastMessage: String? = null,
     val lastUpdated: String? = null,
-    @SerialName("otherParticipant") val otherParticipant: String? = null
+
+    @SerialName("otherParticipant")
+    val otherParticipant: String? = null
 )
 
 @Serializable
@@ -95,4 +114,38 @@ data class Message(
     val content: String,
     val status: String,
     val timestamp: String
+)
+
+/**
+ * Request payload used when adding or removing a listing
+ * from the user's favourites.
+ */
+@Serializable
+data class FavouriteRequest(
+    val listingId: Int,
+    val userId: Int
+)
+
+/**
+ * Response returned by the favourites API after
+ * adding or removing a favourite.
+ */
+@Serializable
+data class FavouriteResponse(
+    val success: Boolean,
+    val isFavourite: Boolean,
+    val message: String? = null
+)
+
+/**
+ * Represents a listing saved in the user's favourites.
+ */
+@Serializable
+data class FavouriteItem(
+    val listingId: Int,
+    val title: String,
+    val price: Double,
+    val imageUrl: String?,
+    val isAvailable: Boolean = true,
+    val addedAt: Long = System.currentTimeMillis()
 )

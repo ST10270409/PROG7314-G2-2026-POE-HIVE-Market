@@ -1,6 +1,13 @@
+@file:OptIn(
+    kotlinx.serialization.ExperimentalSerializationApi::class,
+    kotlinx.serialization.InternalSerializationApi::class
+)
+
 package com.hivemarket.app.data.remote
 
 import com.hivemarket.app.domain.Conversation
+import com.hivemarket.app.domain.FavouriteRequest
+import com.hivemarket.app.domain.FavouriteResponse
 import com.hivemarket.app.domain.Listing
 import com.hivemarket.app.domain.Message
 import com.hivemarket.app.domain.Offer
@@ -8,6 +15,7 @@ import com.hivemarket.app.domain.User
 import kotlinx.serialization.Serializable
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
@@ -16,8 +24,7 @@ import retrofit2.http.Query
 
 /**
  * Maps 1:1 to the "Endpoint specification" table in the Planning and Design
- * document (Section 5). Every endpoint here should have a corresponding row
- * in that table — if you add one here, add it there too, and vice versa.
+ * document (Section 5).
  *
  * Auth: the Firebase ID token is attached automatically by [AuthInterceptor]
  * (see NetworkModule), so it does not need to be passed manually per-call.
@@ -31,7 +38,9 @@ interface HiveMarketApi {
     suspend fun getMyProfile(): Response<User>
 
     @PATCH("api/users/me")
-    suspend fun updateMyProfile(@Body body: UpdateProfileRequest): Response<UpdatedResponse>
+    suspend fun updateMyProfile(
+        @Body body: UpdateProfileRequest
+    ): Response<UpdatedResponse>
 
     @GET("api/listings")
     suspend fun getListings(
@@ -42,24 +51,47 @@ interface HiveMarketApi {
     ): Response<ListingsResponse>
 
     @POST("api/listings")
-    suspend fun createListing(@Body body: CreateListingRequest): Response<CreateListingResponse>
+    suspend fun createListing(
+        @Body body: CreateListingRequest
+    ): Response<CreateListingResponse>
 
     @GET("api/listings/{listingID}")
-    suspend fun getListing(@Path("listingID") listingID: Int): Response<Listing>
+    suspend fun getListing(
+        @Path("listingID") listingID: Int
+    ): Response<Listing>
+
+    // ---------------- FAVOURITES ----------------
+
+    @GET("api/favourites/{userId}")
+    suspend fun getFavourites(
+        @Path("userId") userId: String
+    ): retrofit2.Response<List<Listing>>
+
+    @POST("api/favourites")
+    suspend fun addFavourite(
+        @Body request: FavouriteRequest
+    ): FavouriteResponse
+
+    @DELETE("api/favourites/{userId}/{listingId}")
+    suspend fun removeFavourite(
+        @Path("userId") userId: String,
+        @Path("listingId") listingId: String
+    ): FavouriteResponse
+
+    // ---------------- CONVERSATIONS ----------------
 
     @GET("api/conversations")
     suspend fun getConversations(): Response<ConversationsResponse>
 
-    // Not in the original Section 5 endpoint table — added to support the
-    // Listing Detail "Message" button, which needs a conversation to exist
-    // (or be created) before a message can be sent into it. Update the
-    // Planning and Design document's endpoint table to match if this ships
-    // to the group repo.
     @POST("api/conversations")
-    suspend fun startConversation(@Body body: StartConversationRequest): Response<Conversation>
+    suspend fun startConversation(
+        @Body body: StartConversationRequest
+    ): Response<Conversation>
 
     @GET("api/conversations/{conversationID}/messages")
-    suspend fun getMessages(@Path("conversationID") conversationID: Int): Response<MessagesResponse>
+    suspend fun getMessages(
+        @Path("conversationID") conversationID: Int
+    ): Response<MessagesResponse>
 
     @POST("api/conversations/{conversationID}/messages")
     suspend fun sendMessage(
@@ -74,19 +106,34 @@ interface HiveMarketApi {
     ): Response<Offer>
 
     @PATCH("api/settings")
-    suspend fun updateSettings(@Body body: SettingsRequest): Response<UpdatedResponse>
+    suspend fun updateSettings(
+        @Body body: SettingsRequest
+    ): Response<UpdatedResponse>
 }
 
-// ---- Request/response payload shapes (mirrors Section 5 of the Planning and Design doc) ----
+// ---- Request/response payload shapes ----
 
 @Serializable
-data class AuthResponse(val userID: Int, val name: String, val email: String, val trustScore: Int, val isNewUser: Boolean)
+data class AuthResponse(
+    val userID: Int,
+    val name: String,
+    val email: String,
+    val trustScore: Int,
+    val isNewUser: Boolean
+)
 
 @Serializable
-data class UpdateProfileRequest(val name: String? = null, val surname: String? = null, val username: String? = null)
+data class UpdateProfileRequest(
+    val name: String? = null,
+    val surname: String? = null,
+    val username: String? = null
+)
 
 @Serializable
-data class ListingsResponse(val items: List<Listing>, val nextPage: String? = null)
+data class ListingsResponse(
+    val items: List<Listing>,
+    val nextPage: String? = null
+)
 
 @Serializable
 data class CreateListingRequest(
@@ -100,22 +147,37 @@ data class CreateListingRequest(
 )
 
 @Serializable
-data class CreateListingResponse(val listingID: Int, val status: String, val datePosted: String)
+data class CreateListingResponse(
+    val listingID: Int,
+    val status: String,
+    val datePosted: String
+)
 
 @Serializable
-data class ConversationsResponse(val items: List<Conversation>)
+data class ConversationsResponse(
+    val items: List<Conversation>
+)
 
 @Serializable
-data class StartConversationRequest(val listingID: Int)
+data class StartConversationRequest(
+    val listingID: Int
+)
 
 @Serializable
-data class MessagesResponse(val items: List<Message>)
+data class MessagesResponse(
+    val items: List<Message>
+)
 
 @Serializable
-data class SendMessageRequest(val content: String)
+data class SendMessageRequest(
+    val content: String
+)
 
 @Serializable
-data class MakeOfferRequest(val amount: Double, val message: String? = null)
+data class MakeOfferRequest(
+    val amount: Double,
+    val message: String? = null
+)
 
 @Serializable
 data class SettingsRequest(
@@ -125,4 +187,6 @@ data class SettingsRequest(
 )
 
 @Serializable
-data class UpdatedResponse(val updated: Boolean)
+data class UpdatedResponse(
+    val updated: Boolean
+)

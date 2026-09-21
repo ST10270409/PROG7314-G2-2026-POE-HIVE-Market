@@ -1,3 +1,4 @@
+
 package com.hivemarket.app.data.local
 
 import androidx.room.Dao
@@ -8,15 +9,13 @@ import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
 import kotlinx.coroutines.flow.Flow
 
 /**
  * Local cache for FR4/FR9 (offline listing drafts with auto-sync).
  *
  * `clientId` is the client-generated GUID used as the idempotency key when
- * WorkManager eventually POSTs this row to /api/listings — see the offline
- * sync sequence diagram (Figure 6) in the Planning and Design document.
+ * WorkManager eventually POSTs this row to /api/listings.
  * `pendingSync = true` until the API confirms the write and returns a real
  * `listingID`, at which point `serverListingId` is populated.
  */
@@ -50,9 +49,6 @@ interface ListingDao {
     @Query("SELECT * FROM listings WHERE pendingSync = 1")
     suspend fun getPendingSync(): List<ListingEntity>
 
-    // Flow version of the above — backs the Offline Drafts screen, which
-    // needs to update live as WorkManager/manual retries clear pendingSync,
-    // not just read it once.
     @Query("SELECT * FROM listings WHERE pendingSync = 1 ORDER BY cachedAt DESC")
     fun observePendingSync(): Flow<List<ListingEntity>>
 
@@ -69,7 +65,17 @@ interface ListingDao {
     suspend fun clearSyncedCache()
 }
 
-@Database(entities = [ListingEntity::class], version = 2, exportSchema = false)
+@Database(
+    entities = [
+        ListingEntity::class,
+        FavouriteEntity::class
+    ],
+    version = 3,
+    exportSchema = false
+)
 abstract class HiveMarketDatabase : RoomDatabase() {
+
     abstract fun listingDao(): ListingDao
+
+    abstract fun favouriteDao(): FavouriteDao
 }
