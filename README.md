@@ -488,7 +488,13 @@ layers. These components contain application logic such as authentication
 handling, listing operations, offline drafts, settings, chat functionality
 and API-related operations.
 
-The tests are located under:
+---
 
-```text
-app/src/test/
+## GitHub Actions and Continuous Integration
+
+HiveMarket uses **GitHub Actions** to automate important parts of the Android
+development workflow.
+
+The continuous integration workflow is stored in:
+
+.github/workflows/android-ci.yml
