@@ -402,4 +402,35 @@ The main repository used for marketplace functionality is:
 ```text
 ListingRepository
 
+---
 
+## REST API Integration
+
+HiveMarket communicates with a RESTful backend API to support marketplace
+operations that require remote data. The Android application uses Retrofit
+to define and execute HTTP requests while the repository layer controls how
+the returned data is used by the application.
+
+The API integration is separated from the Compose UI. Screens communicate
+with ViewModels, ViewModels communicate with repositories, and the
+repository communicates with the Retrofit API service.
+
+### API Communication Flow
+
+```text
+User
+  │
+  ▼
+Compose Screen
+  │
+  ▼
+ViewModel
+  │
+  ▼
+ListingRepository
+  │
+  ▼
+HiveMarketApi
+  │
+  ▼
+REST API
