@@ -17,7 +17,10 @@ import kotlinx.coroutines.flow.Flow
  * `clientId` is the client-generated GUID used as the idempotency key when
  * WorkManager eventually POSTs this row to /api/listings.
  * `pendingSync = true` until the API confirms the write and returns a real
- * `listingID`, at which point `serverListingId` is populated.
+ * `listingID`, at which point `serverListingId` is populated AND
+ * `clientId` is rewritten to match the server ID (see markSynced below) —
+ * this keeps one row per listing instead of a synced row plus a second
+ * duplicate row the next time Browse refreshes from the server.
  */
 @Entity(tableName = "listings")
 data class ListingEntity(
@@ -58,7 +61,13 @@ interface ListingDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(listings: List<ListingEntity>)
 
-    @Query("UPDATE listings SET pendingSync = 0, serverListingId = :serverListingId WHERE clientId = :clientId")
+    // Also rewrites clientId to match the server's ID (as text) — without
+    // this, the local row keeps its original offline-generated UUID as its
+    // primary key even after syncing. The next Browse refresh then inserts
+    // a SECOND row for the same listing (keyed by the server ID instead),
+    // since nothing recognizes them as the same item — that's what caused
+    // every synced listing to appear twice.
+    @Query("UPDATE listings SET pendingSync = 0, serverListingId = :serverListingId, clientId = CAST(:serverListingId AS TEXT) WHERE clientId = :clientId")
     suspend fun markSynced(clientId: String, serverListingId: Int)
 
     @Query("DELETE FROM listings WHERE pendingSync = 0")
