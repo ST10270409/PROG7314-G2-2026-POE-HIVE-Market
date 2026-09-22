@@ -321,3 +321,85 @@ descriptive commit messages.
 GitHub Actions provides continuous integration. The CI workflow runs the
 project's automated unit tests and builds a debug APK whenever changes are
 pushed to the repository.
+
+
+---
+
+## System Architecture
+
+HiveMarket follows a layered Android application architecture based on the
+**Model–View–ViewModel (MVVM)** pattern and the **Repository Pattern**.
+
+The architecture separates the user interface, application state,
+business/data access logic, local persistence and remote API communication.
+This separation makes the application easier to maintain and allows
+individual components to be tested independently.
+
+### Architectural Layers
+
+The main layers of the HiveMarket application are:
+
+1. **Presentation Layer**
+2. **ViewModel Layer**
+3. **Repository Layer**
+4. **Data Sources**
+5. **Backend and External Services**
+
+---
+
+### 1. Presentation Layer
+
+The presentation layer contains the Jetpack Compose screens used by the
+user.
+
+Examples include:
+
+- `LoginScreen`
+- `BrowseScreen`
+- `ListingDetailScreen`
+- `CreateListingScreen`
+- `ChatScreen`
+- `OfflineDraftsScreen`
+- `SettingsScreen`
+
+The screens are responsible primarily for displaying application state and
+collecting user input. They delegate application operations to their
+corresponding ViewModels rather than directly communicating with the
+database or REST API.
+
+---
+
+### 2. ViewModel Layer
+
+ViewModels manage UI-related state and coordinate operations required by
+the screens.
+
+The project contains ViewModels for areas such as:
+
+- Login
+- Browse
+- Create Listing
+- Listing Detail
+- Chat
+- Offline Drafts
+- Settings
+
+ViewModels use Kotlin Coroutines and Flow where appropriate to perform
+asynchronous operations and expose state to the Compose UI.
+
+This separation prevents the UI from containing the application's main
+business and data-access logic.
+
+---
+
+### 3. Repository Layer
+
+The repository layer provides an abstraction between the ViewModels and the
+underlying data sources.
+
+The main repository used for marketplace functionality is:
+
+```text
+ListingRepository
+
+
