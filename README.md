@@ -716,3 +716,6 @@ Git and GitHub version control.
 The project demonstrates how these technologies can be combined to produce
 a structured Android marketplace prototype with both local and remote data
 capabilities.
+
+## Demo Video
+[Watch the demo](https://youtu.be/Py7L0mZfaBg)
