@@ -1,18 +1,11 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace HiveMarketApi.Models;
 
-// NOTE ON FIELD NAMES: every property here has an explicit [JsonPropertyName]
-// matching the Kotlin domain models (app/src/main/java/com/hivemarket/app/domain/Models.kt)
-// character-for-character — e.g. "listingID", not "listingId". C#'s default
-// JSON naming policies would produce "listingId" (lowercase d), which the
-// Android app's kotlinx.serialization would silently fail to populate rather
-// than error on. Do not rely on a global camelCase policy for this reason —
-// every field is explicit on purpose.
-
 public class UserEntity
 {
-    public int UserID { get; set; }
+    [Key] public int UserID { get; set; }
     public string FirebaseUid { get; set; } = "";
     public string Name { get; set; } = "";
     public string Surname { get; set; } = "";
@@ -28,14 +21,14 @@ public class UserEntity
 
 public class CategoryEntity
 {
-    public int CategoryID { get; set; }
+    [Key] public int CategoryID { get; set; }
     public string Name { get; set; } = "";
     public string? Description { get; set; }
 }
 
 public class ListingEntity
 {
-    public int ListingID { get; set; }
+    [Key] public int ListingID { get; set; }
     public string Title { get; set; } = "";
     public string Description { get; set; } = "";
     public int CategoryID { get; set; }
@@ -50,7 +43,7 @@ public class ListingEntity
 
 public class OfferEntity
 {
-    public int OfferID { get; set; }
+    [Key] public int OfferID { get; set; }
     public int ListingID { get; set; }
     public int BuyerID { get; set; }
     public double Amount { get; set; }
@@ -61,7 +54,7 @@ public class OfferEntity
 
 public class ConversationEntity
 {
-    public int ConversationID { get; set; }
+    [Key] public int ConversationID { get; set; }
     public int ListingID { get; set; }
     public int BuyerID { get; set; }
     public int SellerID { get; set; }
@@ -71,15 +64,13 @@ public class ConversationEntity
 
 public class MessageEntity
 {
-    public int MessageID { get; set; }
+    [Key] public int MessageID { get; set; }
     public int ConversationID { get; set; }
     public int SenderID { get; set; }
     public string Content { get; set; } = "";
     public string Status { get; set; } = "Sent";
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }
-
-// ---- DTOs (response/request shapes — mirrors HiveMarketApi.kt exactly) ----
 
 public class UserDto
 {
