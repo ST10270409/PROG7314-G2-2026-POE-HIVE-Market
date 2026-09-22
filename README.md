@@ -498,3 +498,49 @@ development workflow.
 The continuous integration workflow is stored in:
 
 .github/workflows/android-ci.yml
+
+
+---
+
+## Git Workflow and Collaboration
+
+HiveMarket is developed collaboratively using **Git and GitHub** for source
+code management and version control.
+
+Git allows the development team to maintain a history of changes while
+GitHub provides a central repository for sharing project code and
+collaborating on the application.
+
+The project repository contains the Android application source code,
+documentation, automated tests, GitHub Actions configuration and supporting
+project files.
+
+---
+
+## Repository Structure
+
+The main project repository is organised into different areas according to
+their purpose.
+
+A simplified structure is:
+
+HiveMarket/
+│
+├── app/
+│   ├── src/
+│   │   ├── main/
+│   │   │   └── java/
+│   │   │       └── com/hivemarket/app/
+│   │   └── test/
+│   │
+│   ├── build.gradle.kts
+│   └── google-services.json.example
+│
+├── .github/
+│   └── workflows/
+│       └── android-ci.yml
+│
+├── README.md
+├── build.gradle.kts
+├── settings.gradle.kts
+└── gradle/
