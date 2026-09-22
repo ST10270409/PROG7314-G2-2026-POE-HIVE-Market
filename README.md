@@ -179,3 +179,145 @@ can communicate regarding marketplace listings within the application.
 Frequently accessed listing information is cached using Room. If the API
 cannot be reached, the application can use locally stored information where
 supported.
+
+---
+
+## Technology Stack
+
+HiveMarket is implemented as a native Android application using Kotlin.
+The prototype combines Android Jetpack components, Firebase services,
+local persistence and REST API integration to support the application's
+marketplace functionality.
+
+### Core Technologies
+
+| Technology | Purpose |
+|---|---|
+| **Kotlin** | Primary programming language used to implement the Android application. |
+| **Jetpack Compose** | Used to create the application's user interface using declarative UI components. |
+| **Android SDK** | Provides the native Android platform and application development framework. |
+| **Material 3** | Provides UI components and theming for the application's interface. |
+| **Android Navigation** | Handles navigation between the application's screens. |
+| **ViewModel** | Maintains UI-related state and separates presentation logic from the UI. |
+| **Hilt** | Provides dependency injection throughout the application. |
+| **Room** | Provides local SQLite-based persistence and caching. |
+| **Retrofit** | Handles communication between the Android application and the REST API. |
+| **Firebase Authentication** | Provides user registration and authentication functionality. |
+| **Firebase services** | Supports authentication and the application's backend-related functionality. |
+| **Kotlin Coroutines** | Supports asynchronous operations and background processing. |
+| **WorkManager** | Supports deferred background synchronisation of pending offline data. |
+| **JUnit** | Used to create and execute automated unit tests. |
+| **MockK** | Used to mock dependencies when testing repository and ViewModel behaviour. |
+| **Turbine** | Used to test Kotlin Flow emissions in ViewModel tests. |
+| **Git & GitHub** | Used for version control, collaboration and repository management. |
+| **GitHub Actions** | Provides continuous integration by automatically building and testing the project. |
+
+---
+
+## Application Development Technologies
+
+### Kotlin
+
+Kotlin is the primary programming language used throughout the HiveMarket
+Android application. Kotlin provides support for null safety, coroutines,
+data classes and concise Android development.
+
+### Jetpack Compose
+
+The user interface is implemented using Jetpack Compose. Compose allows the
+application screens to be created using reusable composable functions
+rather than traditional XML layout files.
+
+The prototype uses Compose for screens including:
+
+- Login
+- Browse
+- Listing Details
+- Create Listing
+- Chat
+- Offline Drafts
+- Settings
+- Coming Soon screens
+
+### Room Database
+
+Room is used as the application's local persistence mechanism. Listing
+information, pending offline data and favourite information can be stored
+locally.
+
+The local database supports the application's offline-first approach by
+allowing selected data to remain available without an active network
+connection.
+
+### Retrofit
+
+Retrofit is used as the HTTP client for communication between the Android
+application and the HiveMarket REST API.
+
+The API integration is accessed through the repository layer rather than
+directly from the UI screens. This helps separate network communication
+from presentation logic.
+
+### Firebase Authentication
+
+Firebase Authentication is used to provide user registration and login
+functionality. The Login screen supports both registration and sign-in
+states.
+
+### Hilt
+
+Hilt is used for dependency injection. It provides dependencies such as
+the API service, Room database and repositories to the components that
+require them.
+
+### Kotlin Coroutines and Flow
+
+Kotlin Coroutines are used for asynchronous operations such as API calls
+and database operations. Kotlin Flow is used where application state and
+locally stored data need to be observed reactively.
+
+### WorkManager
+
+WorkManager is used to support background processing for pending offline
+listing synchronisation. When a listing cannot immediately be synchronised,
+the application can retain the local data and attempt synchronisation
+later.
+
+---
+
+## Testing Technologies
+
+Automated unit testing is implemented using the following tools:
+
+### JUnit
+
+JUnit provides the testing framework used to define and execute individual
+unit tests.
+
+### MockK
+
+MockK is used to create mock implementations of dependencies such as API
+services and DAOs. This allows individual components to be tested without
+requiring a live backend or database connection.
+
+### Kotlin Coroutines Test
+
+Coroutine testing utilities are used when testing suspend functions and
+coroutine-based ViewModel or repository behaviour.
+
+### Turbine
+
+Turbine is used to test Kotlin Flow emissions and verify that ViewModels
+produce the expected sequence of UI states.
+
+---
+
+## Development and Version Control
+
+Git is used for source control and GitHub is used as the shared remote
+repository. Changes are committed regularly during development using
+descriptive commit messages.
+
+GitHub Actions provides continuous integration. The CI workflow runs the
+project's automated unit tests and builds a debug APK whenever changes are
+pushed to the repository.
