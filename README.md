@@ -474,3 +474,21 @@ The offline-first data flow can be represented as:
                     │ Room  │ │ Retrofit   │
                     │  DB   │ │    API     │
                     └───────┘ └────────────┘
+
+
+---
+
+## Automated Testing Strategy
+
+HiveMarket includes automated unit tests to verify important application
+logic independently from the Android user interface.
+
+The testing strategy focuses primarily on the ViewModel and repository
+layers. These components contain application logic such as authentication
+handling, listing operations, offline drafts, settings, chat functionality
+and API-related operations.
+
+The tests are located under:
+
+```text
+app/src/test/
