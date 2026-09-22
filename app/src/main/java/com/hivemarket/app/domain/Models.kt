@@ -149,3 +149,16 @@ data class FavouriteItem(
     val isAvailable: Boolean = true,
     val addedAt: Long = System.currentTimeMillis()
 )
+
+@Serializable
+data class MakeOfferRequest(
+    val listingID: Int,
+    val amount: Double,
+    val message: String? = null
+)
+
+@Serializable
+data class StartConversationRequest(
+    val listingID: Int,
+    val recipientID: Int
+)
