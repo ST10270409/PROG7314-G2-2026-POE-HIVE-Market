@@ -544,3 +544,175 @@ HiveMarket/
 ├── build.gradle.kts
 ├── settings.gradle.kts
 └── gradle/
+
+
+## Installation and Setup
+
+HiveMarket can be opened and developed using **Android Studio** with the
+Android project and its Gradle configuration.
+
+### Prerequisites
+
+The following software is required:
+
+| Requirement | Version / Requirement |
+|---|---|
+| Android Studio | Compatible recent version |
+| JDK | 17 |
+| Android SDK | Required SDK versions configured by the project |
+| Gradle | 9.6.0 |
+| Git | Required for cloning and version control |
+| Internet Connection | Required for downloading dependencies and remote services |
+
+The project uses Gradle to manage Android dependencies and build tasks.
+
+---
+
+## Cloning the Repository
+
+The project can be obtained from GitHub by cloning the repository.
+
+```bash
+git clone <repository-url>
+
+After cloning the repository, open the project in Android Studio and allow
+Gradle to synchronise the project dependencies.
+
+The project should be opened from the directory containing:
+
+settings.gradle.kts
+build.gradle.kts
+app/
+gradle/
+Firebase Configuration
+
+HiveMarket uses Firebase services and therefore requires the appropriate
+Google services configuration.
+
+The project includes an example configuration file:
+
+app/google-services.json.example
+
+For local development, the required Firebase configuration should be
+provided as:
+
+app/google-services.json
+
+The real Firebase configuration should not be committed to the repository
+when it contains project-specific credentials or configuration that should
+remain private.
+
+The CI workflow uses the example configuration to provide the required file
+during automated builds.
+
+Running the Application
+
+After opening the project in Android Studio:
+
+Allow Gradle to complete project synchronisation.
+Ensure the required Android SDK is installed.
+Connect an Android device or start an Android emulator.
+Select the app configuration.
+Run the application from Android Studio.
+
+The application can also be built from the command line.
+
+On Windows:
+
+.\gradlew.bat assembleDebug
+
+The generated debug APK is placed in:
+
+app/build/outputs/apk/debug/
+Running Automated Tests
+
+The project's local unit tests can be executed from the project root using:
+
+.\gradlew.bat testDebugUnitTest
+
+The test source code is located under:
+
+app/src/test/
+
+The project also executes these tests automatically through the GitHub
+Actions CI workflow.
+
+Project Configuration
+
+Before running the application locally, developers should ensure that the
+required project configuration is available.
+
+The main configuration areas include:
+
+Firebase configuration.
+Android SDK configuration.
+Gradle configuration.
+Backend API configuration where applicable.
+Local development environment configuration.
+
+Configuration should be checked before troubleshooting application
+functionality because missing configuration can prevent the project from
+building successfully.
+
+Known Limitations
+
+The current Part 2 prototype does not represent the complete final
+HiveMarket application.
+
+Some functionality remains outside the implemented Part 2 scope.
+
+Examples include:
+
+Google Sign-In is not currently implemented.
+The Messages/Profile navigation areas include functionality that is
+planned for future development.
+Some features depend on communication with the remote backend API.
+Offline functionality is implemented for selected marketplace operations
+rather than every application feature.
+The project requires appropriate Firebase configuration for local builds.
+The debug APK is intended for development and testing rather than
+production distribution.
+
+These limitations reflect the current prototype scope and can be addressed
+in future development stages.
+
+Future Development
+
+Future versions of HiveMarket can extend the current prototype with
+additional functionality.
+
+Potential areas for future development include:
+
+Completing Google Sign-In.
+Expanding the Messages functionality.
+Completing the user Profile functionality.
+Extending offline support to additional features.
+Improving synchronisation and conflict handling.
+Adding additional automated test coverage.
+Preparing the application for production deployment.
+
+The existing architecture provides a foundation for extending these
+features without requiring the entire application to be redesigned.
+
+Part 2 Prototype Summary
+
+HiveMarket demonstrates a native Android marketplace application developed
+using Kotlin and Jetpack Compose.
+
+The prototype combines:
+
+Native Android development.
+Jetpack Compose user interfaces.
+MVVM architecture.
+Repository-based data access.
+Retrofit REST API integration.
+Room local persistence.
+Firebase authentication and services.
+Offline-first listing functionality.
+Automated unit testing.
+GitHub Actions continuous integration.
+Git and GitHub version control.
+
+The project demonstrates how these technologies can be combined to produce
+a structured Android marketplace prototype with both local and remote data
+capabilities.
