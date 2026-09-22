@@ -89,6 +89,9 @@ dependencies {
     kapt("com.google.dagger:hilt-android-compiler:2.57")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
+    // Google Sign-In (classic GoogleSignInClient API)
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
+
     // Dagger/Hilt bundles its own reader for Kotlin's metadata format, and
     // that reader lags behind whatever Kotlin version is actually producing
     // the metadata — this is what caused:
