@@ -23,7 +23,7 @@ import javax.inject.Singleton
  * (e.g. "http://10.0.2.2:5000/") while Luke's endpoints are still being
  * stood up — the network_security_config.xml already allows that host.
  */
-private const val BASE_URL = "https://hivemarket-api.onrender.com/"
+private const val BASE_URL = "https://prog7314-g2-2026-poe-hive-market.onrender.com/"
 
 @Module
 @InstallIn(SingletonComponent::class)
