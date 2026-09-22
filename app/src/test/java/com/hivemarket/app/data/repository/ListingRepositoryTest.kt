@@ -28,6 +28,7 @@ class ListingRepositoryTest {
 
     private val api: HiveMarketApi = mockk()
     private val dao: ListingDao = mockk(relaxed = true)
+    private val favouriteDao: com.hivemarket.app.data.local.FavouriteDao = mockk(relaxed = true)
     private lateinit var repository: ListingRepository
 
     private val sampleListing = Listing(
@@ -45,7 +46,7 @@ class ListingRepositoryTest {
 
     @Before
     fun setUp() {
-        repository = ListingRepository(api, dao)
+        repository = ListingRepository(api, dao, favouriteDao)
     }
 
     @Test

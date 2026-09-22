@@ -1,6 +1,8 @@
 package com.hivemarket.app.data.repository
 
 import android.util.Log
+import com.hivemarket.app.data.local.FavouriteDao
+import com.hivemarket.app.data.local.FavouriteEntity
 import com.hivemarket.app.data.local.ListingDao
 import com.hivemarket.app.data.local.ListingEntity
 import com.hivemarket.app.data.remote.CreateListingRequest
@@ -8,6 +10,7 @@ import com.hivemarket.app.data.remote.HiveMarketApi
 import com.hivemarket.app.data.remote.MakeOfferRequest
 import com.hivemarket.app.data.remote.StartConversationRequest
 import com.hivemarket.app.domain.Conversation
+import com.hivemarket.app.domain.FavouriteRequest
 import com.hivemarket.app.domain.Listing
 import com.hivemarket.app.domain.Offer
 import kotlinx.coroutines.flow.Flow
@@ -24,7 +27,8 @@ sealed class ApiResult<out T> {
 @Singleton
 class ListingRepository @Inject constructor(
     private val api: HiveMarketApi,
-    private val dao: ListingDao
+    private val dao: ListingDao,
+    private val favouriteDao: FavouriteDao
 ) {
     companion object {
         private const val TAG = "ListingRepository"
@@ -182,6 +186,67 @@ class ListingRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Log.w(TAG, "Immediate sync failed for $clientId, will retry via WorkManager", e)
+        }
+    }
+
+    // ---------------- FAVOURITES ----------------
+    // Added to fill in what FavouritesViewModel already called but this
+    // repository never actually implemented (a merge gap, not new scope) —
+    // Favourites was not one of the group's 3 chosen features, so this is
+    // kept minimal: local-first like listings, but without an offline
+    // retry queue, since favouriting isn't expected to happen while
+    // offline the way creating a listing is.
+
+    fun getFavouritesFromDb(): Flow<List<FavouriteEntity>> = favouriteDao.getAllFavourites()
+
+    suspend fun toggleFavourite(listing: Listing, currentUserId: String) {
+        val listingIdStr = listing.listingID.toString()
+        // Same Firebase-UID-string vs backend-int-userID gap noted in
+        // CreateListingViewModel — a real fix needs the same
+        // /api/auth/firebase-derived mapping once that's wired up.
+        val userIdInt = currentUserId.toIntOrNull() ?: currentUserId.hashCode()
+        val alreadyFavourite = favouriteDao.isFavouriteSync(listingIdStr)
+        try {
+            if (alreadyFavourite) {
+                favouriteDao.deleteFavouriteById(listingIdStr)
+                api.removeFavourite(userId = currentUserId, listingId = listingIdStr)
+            } else {
+                favouriteDao.insertFavourite(
+                    FavouriteEntity(
+                        listingId = listingIdStr,
+                        title = listing.title,
+                        price = listing.price,
+                        imageUrl = listing.image
+                    )
+                )
+                api.addFavourite(FavouriteRequest(listingId = listing.listingID, userId = userIdInt))
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Favourite sync with server failed, local state still updated", e)
+        }
+    }
+
+    suspend fun syncFavouritesFromRemote(userId: String) {
+        try {
+            val response = api.getFavourites(userId)
+            if (response.isSuccessful) {
+                val listings = response.body().orEmpty()
+                favouriteDao.clearAll()
+                listings.forEach { listing ->
+                    favouriteDao.insertFavourite(
+                        FavouriteEntity(
+                            listingId = listing.listingID.toString(),
+                            title = listing.title,
+                            price = listing.price,
+                            imageUrl = listing.image
+                        )
+                    )
+                }
+            } else {
+                Log.w(TAG, "GET /api/favourites/$userId failed: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "GET /api/favourites/$userId failed, keeping local cache", e)
         }
     }
 }
