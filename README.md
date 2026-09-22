@@ -1,191 +1,718 @@
-# HiveMarket
+# 🐝 HiveMarket
 
-PROG7314 Group 2 — Portfolio of Evidence, Part 2 (App Prototype)
+## PROG7314 — Group 2 | Part 2 App Prototype
 
-Group: Nonjabulo Mathenjwa (ST10077892), Luke Lutchmiah (ST10288560), Lonwabo Gumede (ST10270409), Ayabonga Nzuza (ST10400793)
+HiveMarket is a native Android marketplace application designed for
+university and TVET college students in South Africa. The application
+provides a student-focused environment for buying and selling second-hand
+items such as textbooks, electronics, furniture and other everyday goods.
 
----
+The application was developed as part of the **PROG7314 Portfolio of
+Evidence (POE) Part 2 – App Prototype Development**.
 
-## Part 2 status
+### Group Members
 
-This prototype implements: **Login + Register (Firebase Authentication)**, **Browse listings** with category filtering on an offline-first Room cache, **Settings** (FR2 — language with real runtime locale switching, notifications, biometric toggle, log out), **Listing Detail** (view + Make Offer + start/open a conversation), **Create Listing** (FR4/FR9, fully offline-first), **Offline Drafts** (view + manually retry unsynced listings), and **Chat** (real message history + sending). A persistent bottom navigation bar appears on every top-level screen.
-
-**The group's 3 chosen user-defined features for Part 2 grading**: Verified Seller / Trust Score badge, in-app secure chat, and offline listing drafts with auto-sync (manual retry — see "What's deliberately not built yet" below for the one honest gap in this).
-
----
-
-Activity 1: App Concept and API Proposal
-PROG7314 | Group Worksheet | Maximum 4 students
-
-1. Group and Concept
-Group members and student numbers:
-
-Nonjabulo Mathenjwa — ST10077892
-Luke Lutchmiah — ST10288560
-Lonwabo Gumede — ST10270409
-Ayabonga Nzuza — ST10400793
-
-Working app name: HiveMarket
-
-Problem to be solved: Students currently buy and sell second-hand goods (textbooks, electronics, furniture, appliances) through informal, unsafe, and fragmented channels such as WhatsApp groups and physical noticeboards, with no student-only verification, no organised search, and no reliable way to negotiate or get notified while offline or on poor campus wifi.
-Target users: University and TVET college students across multiple South African campuses, particularly students looking to buy or sell textbooks and everyday items within their own trusted student community.
-
-2. Proposed Mobile Solution
-
-Core solution
-
-HiveMarket is a native Android marketplace app restricted to verified students. The main user journey is: a student signs in with Firebase Authentication using their student email, browses or searches a categorised feed of listings from their campus, opens a listing to view details and photos, messages the seller in-app to negotiate, and receives a push notification when they get a reply or offer. Students can also create their own listing — including while offline, with the draft syncing automatically once connectivity returns — and manage preferences such as language and notifications from a settings screen.
-
-Why Android?
-
-A native Android app is appropriate because the required feature set leans heavily on device-level capabilities that are best accessed natively: BiometricPrompt for fingerprint/face authentication, RoomDB for a local offline cache and sync queue, the device camera for listing photos, and Firebase Cloud Messaging for real-time background push notifications even when the app is closed. These capabilities are more reliable and better supported through native Android APIs than through a cross-platform or web wrapper.
-
-Positive impact
-
-HiveMarket reduces the cost of studying by making second-hand textbooks and equipment easier to find and trust within a student-only community, encourages reuse over waste by keeping still-useful items circulating on campus, and improves safety relative to informal channels by verifying student identity and keeping communication inside the app. Offline listing support also makes the app usable for students in residences or areas with limited data access.
-
-3. Custom REST API
-
-The API is the central component of HiveMarket: it owns the authoritative database of users, campuses, listings, images, conversations, and notifications, and enforces all business rules that the mobile client cannot be trusted to enforce itself — such as verifying that a user's email domain matches a known campus before granting access, ensuring only a listing's owner can edit or delete it, resolving conflicts when an offline-created listing syncs, and triggering push notifications when relevant events occur. The mobile app is intentionally kept as a presentation and offline-cache layer; almost all state changes and validation logic live server-side.
-
-API responsibilities and business logic
-
-Validating Firebase ID tokens and mapping verified student email domains to campuses; enforcing ownership and permission checks on listings and messages; managing listing lifecycle status (active, sold, removed); storing and serving image references from blob storage; orchestrating conversation and message delivery; and triggering Firebase Cloud Messaging notifications on relevant events.
-
-Proposed endpoints (minimum five)
-
-#	Method and route	Purpose
-1	POST /api/auth/firebase -	Verify a Firebase ID token (via the Firebase Admin SDK) and return/provision the matching HiveMarket user profile
-2	GET /api/listings -	Browse, search and filter active listings by campus, category, price range and keyword
-3	POST /api/listings -	Create a new listing (accepts client-generated GUID so offline-created drafts sync idempotently)
-4	GET /api/listings/{id} -	Retrieve full listing detail, including seller info and image URLs, for the listing detail screen
-5	POST /api/conversations/{id}/messages -	Send a chat message inside an existing buyer-seller conversation about a listing
-6	PATCH /api/users/me/settings -	Update the current user's settings (language, notification and biometric preferences)
-
-4. POE Feature Fit
-
-Requirement	How it will fit the proposed app
-Single Sign-On	Students sign in via Firebase Authentication using their student email (email/password, with Google as an optional federated provider). Sign-up is restricted to recognised student email domains, and the API validates the Firebase ID token on every request via the Firebase Admin SDK before matching the user to a Campus record.
-Settings (3+)	1) Preferred language (English / isiZulu / Afrikaans). 2) Push notification toggle (new messages, new offers). 3) Biometric login toggle. 4) Default campus/location for the home feed.
-Biometric authentication	Android BiometricPrompt gates re-entry to the app after the first Firebase sign-in and confirms sensitive actions such as marking an item as sold, without requiring the user to re-authenticate via Firebase each time.
-Offline action + synchronisation	Listings can be drafted and saved locally in RoomDB while offline. A WorkManager background job detects reconnection and pushes any queued listing creations/edits to the REST API, resolving conflicts by timestamp.
-Real-time notification	The API triggers Firebase Cloud Messaging pushes when a new message or offer is created on a listing the user owns or is chatting about, delivering real-time alerts even when the app is closed.
-Two South African languages	isiZulu and Afrikaans are implemented via Android string resources and a runtime locale switch exposed in Settings, in addition to the default English UI.
-
-5. Five User-Defined Features
-
-#	Feature	Purpose and user value
-1	Verified Seller / Trust Score badge	Gives buyers a quick, visible signal of a seller's reliability based on completed transactions and account verification, increasing confidence in a stranger-to-stranger trade.
-2	Category-based smart search & filters	Lets students narrow a large, mixed-goods catalogue by category, price range and campus in a few taps, reducing time-to-find for a specific item.
-3	Offline listing drafts with auto-sync	Allows a student to create or edit a listing in areas with poor campus wifi/data coverage (e.g. residence rooms) without losing their work, syncing automatically once reconnected.
-4	Save / Favourite listings	Lets a buyer bookmark items of interest while browsing and revisit them later without having to search again.
-5	In-app secure chat tied to a listing	Keeps all negotiation inside the trusted platform, so buyers and sellers do not need to exchange personal phone numbers before they are ready to.
-
-6. Comparable Android Apps
-This is not the formal research report. These three apps are identified here as suitable candidates to be compared in detail in the formal Research Report.
-App	Google Play Store link	Why it is comparable
-Campus Trade	play.google.com/.../com.campustrade.app	South African student marketplace for textbooks and study essentials — directly comparable regional audience and core buy/sell loop.
-Campora	play.google.com/.../com.campora.app	Broader campus super-app with marketplace, chat, verified accounts and payments — shows the ceiling of feature scope to compare against.
-Vezzy	hypepotamus.com/companies/vezzy	Student-built, university-email-verified, geolocated second-hand marketplace — comparable trust model and single-campus MVP scope.
-
-7. Feasibility and Approval
-Proposed technology
-Android client: Kotlin, Jetpack Compose, MVVM, RoomDB (offline cache/sync), BiometricPrompt, Firebase Cloud Messaging SDK.
-API: ASP.NET Core Web API with Entity Framework Core.
-Database: PostgreSQL (or SQLite for lightweight deployment).
-Hosting: Render (Dockerised Web Service deployment from the same container used in Docker coursework), with image assets stored via Firebase Storage. Render's free tier supports the project's budget; a low-cost starter tier removes cold starts if continuous uptime is needed for demos.
-Authentication: Firebase Authentication (email/password, with Google as an optional federated sign-in), with sign-up restricted to recognised student email domains. The API validates the resulting Firebase ID token on each request using the Firebase Admin SDK, rather than operating a first-party OAuth2/OIDC SSO server.
-
-Three main risks and how they will be reduced
-
-1) Offline sync conflicts, where the same listing is edited on two devices — reduced with client-generated GUIDs, timestamp-based versioning, and a simple last-write-wins resolution strategy in the sync worker.
-2) Scope creep across the many POE-required features — reduced by following a strict, task-level Gantt chart and treating non-essential features as the first to be cut.
-3) Firebase Authentication integration combined with Play Store release requirements — reduced by using the well-documented Firebase Authentication and Admin SDKs, and keeping a simple email/password path as the primary flow with Google sign-in as a secondary option.
-
-Scope check
-
-If the project becomes too large, the Trust Score/Verified Seller badge feature will be removed first, followed by the Save/Favourites feature, while the core buy-sell loop, in-app chat, push notifications, offline sync, Firebase Authentication, and biometric authentication are preserved as non-negotiable POE requirements.
-Lecturer Decision
-☐ Approved     ☐ Approved with changes     ☐ Revise and resubmit
-Conditions or comments:
+| Student | Student Number |
+|---|---|
+| Nonjabulo Mathenjwa | ST10077892 |
+| Luke Lutchmiah | ST10288560 |
+| Lonwabo Gumede | ST10270409 |
+| Ayabonga Nzuza | ST10400793 |
 
 ---
 
-## Architecture
+## Project Purpose
 
-- **UI**: Jetpack Compose, single-Activity, `NavHost`-based navigation, with a persistent bottom navigation bar (Home/Search → Browse, Sell → Create Listing, Messages/Profile → placeholders — see below).
-- **Pattern**: MVVM. Screens hold no logic — they read `StateFlow` from a `ViewModel` and call its functions.
-- **DI**: Hilt (`@HiltAndroidApp`, `@HiltViewModel`, `@Inject`).
-- **Data layer**: Repository pattern. `ListingRepository` is the single source of truth, combining:
-  - **Room** (`HiveMarketDatabase`) — local cache, and the offline-draft queue for FR4/FR9.
-  - **Retrofit + kotlinx.serialization** (`HiveMarketApi`) — talks to the group's ASP.NET Core API.
-- **Auth**: Firebase Authentication. An `OkHttp` interceptor attaches the current user's Firebase ID token to every API call automatically (see `NetworkModule`) — screens and ViewModels never handle tokens directly.
-- **Push**: Firebase Cloud Messaging, received via `HiveMarketMessagingService` (stubbed — logs the payload, doesn't yet render a system notification).
-- **Settings/locale**: `SettingsStore` (SharedPreferences) is the offline-first local cache for FR2; language changes are applied at runtime via `LocaleSwitcher` (`AppCompatDelegate`), injected behind an interface specifically so it stays unit-testable.
+HiveMarket aims to provide students with a more organised and trusted
+alternative to informal second-hand trading through platforms such as
+WhatsApp groups and physical noticeboards.
 
-Every field name in the Kotlin data classes (`domain/Models.kt`) intentionally matches the Data Models and Schema Definitions table in the group's Planning and Design document (e.g. `listingID`, `categoryID`, `price`, not `id`/`amount`) — that consistency is what makes the request/response payloads actually line up with the REST API.
+The application allows students to:
 
-```
-app/src/main/java/com/hivemarket/app/
-├── MainActivity.kt
-├── HiveMarketApp.kt              # Application class, Hilt entry point
-├── navigation/NavGraph.kt
-├── ui/
-│   ├── theme/
-│   └── screens/
-│       ├── login/                 # Login + Register
-│       ├── browse/
-│       ├── settings/
-│       ├── listingdetail/         # View + Make Offer + start Chat
-│       ├── createlisting/         # Offline-first (FR4/FR9)
-│       ├── offlinedrafts/         # View + manually retry unsynced listings
-│       ├── chat/
-│       └── common/                # BottomNavBar, ComingSoonScreen
-├── domain/Models.kt               # Shared data classes (User, Listing, Offer, Conversation, Message)
-├── data/
-│   ├── local/                     # Room database/DAO, SettingsStore, LocaleSwitcher
-│   ├── remote/                    # Retrofit API interface, FCM service
-│   └── repository/                # ListingRepository — the source of truth
-└── di/                             # Hilt modules (Network, Database, App)
-```
+- Register and sign in using Firebase Authentication.
+- Browse available marketplace listings.
+- Filter listings by category.
+- View detailed information about individual listings.
+- Make offers to sellers.
+- Start conversations with sellers through in-app chat.
+- Create listings while connected or offline.
+- Store offline listing drafts locally.
+- Synchronise pending listings with the backend.
+- Manage application settings.
+- Save favourite listings.
 
-## Setup
+The application follows an **offline-first approach**, allowing selected
+functionality to remain available when network connectivity is limited.
+Local data is stored using Room Database and synchronisation is performed
+when communication with the backend is available.
 
-You need a Firebase project and this app's client registered in it before it will run against real auth.
+---
 
-1. Create/open a Firebase project at [console.firebase.google.com](https://console.firebase.google.com).
-2. Add an Android app with package name `com.hivemarket.app`.
-3. Download the resulting `google-services.json` and place it at `app/google-services.json` (this exact path — it's git-ignored, so it won't be committed).
-4. Enable **Email/Password** sign-in under Authentication → Sign-in method.
-5. Open the project in Android Studio and let it sync.
+## Part 2 Scope
 
-**Gradle/AGP/Kotlin versions — read this if the build fails on first sync.** This project targets **Gradle 9.6.0, AGP 9.3.0, and Kotlin 2.1.0**. If your Android Studio auto-generates a different Gradle wrapper version, or sync fails with a version-compatibility error, run **Tools → AGP Upgrade Assistant** rather than hand-editing versions — it resolves the whole chain automatically, capped to what your specific Android Studio release supports. Do not downgrade Gradle to fix an AGP mismatch if you're on a recent JDK (25+) — older Gradle cannot run its daemon on it at all.
+The Part 2 prototype focuses on implementing the core functionality
+identified during the design phase. The implemented prototype includes
+authentication, listing browsing, listing details, listing creation,
+offline drafts, offers, conversations, settings and local caching.
 
-**"Cannot add extension with name 'kotlin'" or a `ClassCastException` mentioning `ApplicationExtensionImpl` / `BaseExtension`.** `gradle.properties` sets two opt-outs (`android.builtInKotlin=false`, `android.newDsl=false`) to keep the classic Kotlin Android plugin working under AGP 9. Both are explained in comments right there in the file, and are removed in AGP 10 — a real migration will be needed eventually, not urgent now.
+The application also demonstrates integration with a custom REST API,
+Firebase services and Android SDK functionality.
 
-**"[Hilt] Provided Metadata instance has version..." or the same error mentioning `androidx.room.jarjarred`.** Two separate libraries (Dagger and Room) each bundle their own reader for Kotlin's metadata format, and each can fall behind a Kotlin version bump. `app/build.gradle.kts` already pins Hilt 2.57+ with an explicit `kotlin-metadata-jvm` override, and Room to 2.8.4 — see the comments at each dependency for what to do if this recurs after a future Kotlin upgrade.
+Features that were identified during the planning phase but were not
+required or fully completed for this prototype are documented separately
+in the **Known Limitations** section.
 
-**Gradle wrapper jar**: not committed (binary files don't belong in source control without Git LFS). Android Studio regenerates it automatically on first open.
 
-**Student email domain**: `LoginViewModel.ALLOWED_EMAIL_DOMAIN` is set to `@student.iie.ac.za` — update if your actual student email domain differs.
+---
 
-**API base URL**: `NetworkModule.BASE_URL` needs to point at wherever the group's ASP.NET Core API is actually deployed. Update this once it's live.
+## Features and Functional Scope
 
-## Running tests locally
+The HiveMarket prototype implements the main marketplace functionality
+identified for the Part 2 submission. The features are organised around
+authentication, marketplace listings, communication between users and
+offline-first functionality.
 
-```
-./gradlew testDebugUnitTest
-```
+### Implemented Features
 
-## Continuous Integration
+#### 1. User Authentication
 
-`.github/workflows/android-ci.yml` runs on every push and pull request: sets up JDK 17 + Gradle 9.6.0, copies the committed placeholder `google-services.json.example` into place (real Firebase credentials are never committed), runs the unit tests, builds a debug APK, and uploads it as a workflow artifact.
+Users can register and sign in to the application using Firebase
+Authentication. Authentication provides the entry point into the
+marketplace and prevents unauthenticated users from accessing the main
+application areas.
 
-## What's deliberately not built yet
+#### 2. Browse Marketplace Listings
 
-- **Messages (inbox) and Profile are placeholders** — the bottom nav routes to them, but there's no real screen behind either. Chat itself (reached from Listing Detail's "Message" button) is fully built.
-- **Offline Drafts sync is manual-retry only, not automatic.** `WorkManager` is a dependency and initializes at startup, but no `Worker` class has been implemented to retry pending listings automatically when connectivity returns. Since offline drafts is one of the group's 3 chosen features, finishing this (a real `CoroutineWorker` with a `NetworkType.CONNECTED` constraint) is worth prioritising.
-- **Listing Detail, Create Listing, and Chat use hardcoded English strings**, not string resources — Login/Browse/Settings are properly localized (en/zu/af); these three aren't yet.
-- Favourites and a dedicated search bar (beyond category chips) were not chosen as one of the 3 features and remain unbuilt.
-- No real biometric re-entry gate yet — the Settings toggle exists, nothing enforces it.
-- Photo upload is a UI stub — Firebase Storage isn't wired in.
+Users can browse available marketplace listings and view information about
+items available for purchase. Listings can be filtered according to the
+available categories.
+
+#### 3. Listing Details
+
+Users can open an individual listing to view additional information about
+the item, including its title, description, price, condition and seller
+information.
+
+#### 4. Create Listing
+
+Users can create marketplace listings by providing the required listing
+information. Listing creation supports the application's offline-first
+approach by saving listing information locally before attempting
+synchronisation with the backend.
+
+#### 5. Make an Offer
+
+Users can submit an offer for an available listing. Offers are submitted
+through the REST API and the application provides feedback based on the
+success or failure of the request.
+
+#### 6. Conversations and Chat
+
+Users can access conversations associated with marketplace listings and
+communicate with other users through the application's chat functionality.
+
+#### 7. Favourite Listings
+
+Users can save listings as favourites. Favourite information is stored
+locally using Room and can also be synchronised with the backend.
+
+#### 8. Offline Drafts
+
+Listing information can be stored locally when immediate communication with
+the backend is unavailable. Pending listings can subsequently be
+synchronised when connectivity is restored.
+
+#### 9. Settings
+
+Users can access application settings and sign out of their account.
+
+---
+
+## Feature Scope
+
+The following table summarises the main functionality included in the
+Part 2 prototype.
+
+| Feature | Part 2 Status | Description |
+|---|---|---|
+| User registration | Implemented | Users can create an account using Firebase Authentication. |
+| User login | Implemented | Registered users can sign in to HiveMarket. |
+| Browse listings | Implemented | Users can view available marketplace listings. |
+| Listing categories | Implemented | Listings can be filtered using categories. |
+| Listing details | Implemented | Users can view detailed listing and seller information. |
+| Create listing | Implemented | Users can create and save marketplace listings. |
+| Make an offer | Implemented | Users can submit offers through the REST API. |
+| Conversations | Implemented | Users can access conversations associated with listings. |
+| Chat | Implemented | Users can communicate through the application's chat functionality. |
+| Favourite listings | Implemented | Users can save listings locally as favourites. |
+| Offline drafts | Implemented | Listings can be stored locally before synchronisation. |
+| Settings | Implemented | Users can manage available application settings and sign out. |
+| Google Sign-In | Deferred | The Google sign-in option is present in the interface but is not implemented for this prototype milestone. |
+| Messages/Profile bottom navigation | Deferred | These routes currently display a Coming Soon screen. |
+
+---
+
+## User-Defined Features
+
+In addition to the core marketplace functionality, the prototype
+incorporates user-defined features intended to improve the experience for
+students.
+
+### Offline-First Listing Creation
+
+Listing information is saved locally before synchronisation with the
+backend. This allows users to continue creating listings when network
+connectivity is temporarily unavailable.
+
+### Favourite Listings
+
+Users can save listings locally so that items of interest can be accessed
+more easily without repeatedly searching the marketplace.
+
+### In-App Communication
+
+The prototype includes conversations and chat functionality so that users
+can communicate regarding marketplace listings within the application.
+
+### Local Data Caching
+
+Frequently accessed listing information is cached using Room. If the API
+cannot be reached, the application can use locally stored information where
+supported.
+
+---
+
+## Technology Stack
+
+HiveMarket is implemented as a native Android application using Kotlin.
+The prototype combines Android Jetpack components, Firebase services,
+local persistence and REST API integration to support the application's
+marketplace functionality.
+
+### Core Technologies
+
+| Technology | Purpose |
+|---|---|
+| **Kotlin** | Primary programming language used to implement the Android application. |
+| **Jetpack Compose** | Used to create the application's user interface using declarative UI components. |
+| **Android SDK** | Provides the native Android platform and application development framework. |
+| **Material 3** | Provides UI components and theming for the application's interface. |
+| **Android Navigation** | Handles navigation between the application's screens. |
+| **ViewModel** | Maintains UI-related state and separates presentation logic from the UI. |
+| **Hilt** | Provides dependency injection throughout the application. |
+| **Room** | Provides local SQLite-based persistence and caching. |
+| **Retrofit** | Handles communication between the Android application and the REST API. |
+| **Firebase Authentication** | Provides user registration and authentication functionality. |
+| **Firebase services** | Supports authentication and the application's backend-related functionality. |
+| **Kotlin Coroutines** | Supports asynchronous operations and background processing. |
+| **WorkManager** | Supports deferred background synchronisation of pending offline data. |
+| **JUnit** | Used to create and execute automated unit tests. |
+| **MockK** | Used to mock dependencies when testing repository and ViewModel behaviour. |
+| **Turbine** | Used to test Kotlin Flow emissions in ViewModel tests. |
+| **Git & GitHub** | Used for version control, collaboration and repository management. |
+| **GitHub Actions** | Provides continuous integration by automatically building and testing the project. |
+
+---
+
+## Application Development Technologies
+
+### Kotlin
+
+Kotlin is the primary programming language used throughout the HiveMarket
+Android application. Kotlin provides support for null safety, coroutines,
+data classes and concise Android development.
+
+### Jetpack Compose
+
+The user interface is implemented using Jetpack Compose. Compose allows the
+application screens to be created using reusable composable functions
+rather than traditional XML layout files.
+
+The prototype uses Compose for screens including:
+
+- Login
+- Browse
+- Listing Details
+- Create Listing
+- Chat
+- Offline Drafts
+- Settings
+- Coming Soon screens
+
+### Room Database
+
+Room is used as the application's local persistence mechanism. Listing
+information, pending offline data and favourite information can be stored
+locally.
+
+The local database supports the application's offline-first approach by
+allowing selected data to remain available without an active network
+connection.
+
+### Retrofit
+
+Retrofit is used as the HTTP client for communication between the Android
+application and the HiveMarket REST API.
+
+The API integration is accessed through the repository layer rather than
+directly from the UI screens. This helps separate network communication
+from presentation logic.
+
+### Firebase Authentication
+
+Firebase Authentication is used to provide user registration and login
+functionality. The Login screen supports both registration and sign-in
+states.
+
+### Hilt
+
+Hilt is used for dependency injection. It provides dependencies such as
+the API service, Room database and repositories to the components that
+require them.
+
+### Kotlin Coroutines and Flow
+
+Kotlin Coroutines are used for asynchronous operations such as API calls
+and database operations. Kotlin Flow is used where application state and
+locally stored data need to be observed reactively.
+
+### WorkManager
+
+WorkManager is used to support background processing for pending offline
+listing synchronisation. When a listing cannot immediately be synchronised,
+the application can retain the local data and attempt synchronisation
+later.
+
+---
+
+## Testing Technologies
+
+Automated unit testing is implemented using the following tools:
+
+### JUnit
+
+JUnit provides the testing framework used to define and execute individual
+unit tests.
+
+### MockK
+
+MockK is used to create mock implementations of dependencies such as API
+services and DAOs. This allows individual components to be tested without
+requiring a live backend or database connection.
+
+### Kotlin Coroutines Test
+
+Coroutine testing utilities are used when testing suspend functions and
+coroutine-based ViewModel or repository behaviour.
+
+### Turbine
+
+Turbine is used to test Kotlin Flow emissions and verify that ViewModels
+produce the expected sequence of UI states.
+
+---
+
+## Development and Version Control
+
+Git is used for source control and GitHub is used as the shared remote
+repository. Changes are committed regularly during development using
+descriptive commit messages.
+
+GitHub Actions provides continuous integration. The CI workflow runs the
+project's automated unit tests and builds a debug APK whenever changes are
+pushed to the repository.
+
+
+---
+
+## System Architecture
+
+HiveMarket follows a layered Android application architecture based on the
+**Model–View–ViewModel (MVVM)** pattern and the **Repository Pattern**.
+
+The architecture separates the user interface, application state,
+business/data access logic, local persistence and remote API communication.
+This separation makes the application easier to maintain and allows
+individual components to be tested independently.
+
+### Architectural Layers
+
+The main layers of the HiveMarket application are:
+
+1. **Presentation Layer**
+2. **ViewModel Layer**
+3. **Repository Layer**
+4. **Data Sources**
+5. **Backend and External Services**
+
+---
+
+### 1. Presentation Layer
+
+The presentation layer contains the Jetpack Compose screens used by the
+user.
+
+Examples include:
+
+- `LoginScreen`
+- `BrowseScreen`
+- `ListingDetailScreen`
+- `CreateListingScreen`
+- `ChatScreen`
+- `OfflineDraftsScreen`
+- `SettingsScreen`
+
+The screens are responsible primarily for displaying application state and
+collecting user input. They delegate application operations to their
+corresponding ViewModels rather than directly communicating with the
+database or REST API.
+
+---
+
+### 2. ViewModel Layer
+
+ViewModels manage UI-related state and coordinate operations required by
+the screens.
+
+The project contains ViewModels for areas such as:
+
+- Login
+- Browse
+- Create Listing
+- Listing Detail
+- Chat
+- Offline Drafts
+- Settings
+
+ViewModels use Kotlin Coroutines and Flow where appropriate to perform
+asynchronous operations and expose state to the Compose UI.
+
+This separation prevents the UI from containing the application's main
+business and data-access logic.
+
+---
+
+### 3. Repository Layer
+
+The repository layer provides an abstraction between the ViewModels and the
+underlying data sources.
+
+The main repository used for marketplace functionality is:
+
+```text
+ListingRepository
+
+---
+
+## REST API Integration
+
+HiveMarket communicates with a RESTful backend API to support marketplace
+operations that require remote data. The Android application uses Retrofit
+to define and execute HTTP requests while the repository layer controls how
+the returned data is used by the application.
+
+The API integration is separated from the Compose UI. Screens communicate
+with ViewModels, ViewModels communicate with repositories, and the
+repository communicates with the Retrofit API service.
+
+### API Communication Flow
+
+```text
+User
+  │
+  ▼
+Compose Screen
+  │
+  ▼
+ViewModel
+  │
+  ▼
+ListingRepository
+  │
+  ▼
+HiveMarketApi
+  │
+  ▼
+REST API
+
+---
+
+## Offline-First Design and Data Persistence
+
+HiveMarket uses an offline-first approach for selected marketplace
+functionality. The purpose of this approach is to reduce the application's
+dependence on continuous network connectivity and allow important local
+operations to continue when the REST API is temporarily unavailable.
+
+The application uses **Room Database** for local persistence and the
+`ListingRepository` to coordinate information between the local database
+and the remote API.
+
+### Offline-First Architecture
+
+The offline-first data flow can be represented as:
+
+```text
+                    ┌──────────────────┐
+                    │   Compose UI     │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │    ViewModel     │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │ ListingRepository│
+                    └───────┬───┬──────┘
+                            │   │
+                  Local     │   │    Remote
+                            │   │
+                            ▼   ▼
+                    ┌───────┐ ┌────────────┐
+                    │ Room  │ │ Retrofit   │
+                    │  DB   │ │    API     │
+                    └───────┘ └────────────┘
+
+
+---
+
+## Automated Testing Strategy
+
+HiveMarket includes automated unit tests to verify important application
+logic independently from the Android user interface.
+
+The testing strategy focuses primarily on the ViewModel and repository
+layers. These components contain application logic such as authentication
+handling, listing operations, offline drafts, settings, chat functionality
+and API-related operations.
+
+---
+
+## GitHub Actions and Continuous Integration
+
+HiveMarket uses **GitHub Actions** to automate important parts of the Android
+development workflow.
+
+The continuous integration workflow is stored in:
+
+.github/workflows/android-ci.yml
+
+
+---
+
+## Git Workflow and Collaboration
+
+HiveMarket is developed collaboratively using **Git and GitHub** for source
+code management and version control.
+
+Git allows the development team to maintain a history of changes while
+GitHub provides a central repository for sharing project code and
+collaborating on the application.
+
+The project repository contains the Android application source code,
+documentation, automated tests, GitHub Actions configuration and supporting
+project files.
+
+---
+
+## Repository Structure
+
+The main project repository is organised into different areas according to
+their purpose.
+
+A simplified structure is:
+
+HiveMarket/
+│
+├── app/
+│   ├── src/
+│   │   ├── main/
+│   │   │   └── java/
+│   │   │       └── com/hivemarket/app/
+│   │   └── test/
+│   │
+│   ├── build.gradle.kts
+│   └── google-services.json.example
+│
+├── .github/
+│   └── workflows/
+│       └── android-ci.yml
+│
+├── README.md
+├── build.gradle.kts
+├── settings.gradle.kts
+└── gradle/
+
+
+## Installation and Setup
+
+HiveMarket can be opened and developed using **Android Studio** with the
+Android project and its Gradle configuration.
+
+### Prerequisites
+
+The following software is required:
+
+| Requirement | Version / Requirement |
+|---|---|
+| Android Studio | Compatible recent version |
+| JDK | 17 |
+| Android SDK | Required SDK versions configured by the project |
+| Gradle | 9.6.0 |
+| Git | Required for cloning and version control |
+| Internet Connection | Required for downloading dependencies and remote services |
+
+The project uses Gradle to manage Android dependencies and build tasks.
+
+---
+
+## Cloning the Repository
+
+The project can be obtained from GitHub by cloning the repository.
+
+```bash
+git clone <repository-url>
+
+After cloning the repository, open the project in Android Studio and allow
+Gradle to synchronise the project dependencies.
+
+The project should be opened from the directory containing:
+
+settings.gradle.kts
+build.gradle.kts
+app/
+gradle/
+Firebase Configuration
+
+HiveMarket uses Firebase services and therefore requires the appropriate
+Google services configuration.
+
+The project includes an example configuration file:
+
+app/google-services.json.example
+
+For local development, the required Firebase configuration should be
+provided as:
+
+app/google-services.json
+
+The real Firebase configuration should not be committed to the repository
+when it contains project-specific credentials or configuration that should
+remain private.
+
+The CI workflow uses the example configuration to provide the required file
+during automated builds.
+
+Running the Application
+
+After opening the project in Android Studio:
+
+Allow Gradle to complete project synchronisation.
+Ensure the required Android SDK is installed.
+Connect an Android device or start an Android emulator.
+Select the app configuration.
+Run the application from Android Studio.
+
+The application can also be built from the command line.
+
+On Windows:
+
+.\gradlew.bat assembleDebug
+
+The generated debug APK is placed in:
+
+app/build/outputs/apk/debug/
+Running Automated Tests
+
+The project's local unit tests can be executed from the project root using:
+
+.\gradlew.bat testDebugUnitTest
+
+The test source code is located under:
+
+app/src/test/
+
+The project also executes these tests automatically through the GitHub
+Actions CI workflow.
+
+Project Configuration
+
+Before running the application locally, developers should ensure that the
+required project configuration is available.
+
+The main configuration areas include:
+
+Firebase configuration.
+Android SDK configuration.
+Gradle configuration.
+Backend API configuration where applicable.
+Local development environment configuration.
+
+Configuration should be checked before troubleshooting application
+functionality because missing configuration can prevent the project from
+building successfully.
+
+Known Limitations
+
+The current Part 2 prototype does not represent the complete final
+HiveMarket application.
+
+Some functionality remains outside the implemented Part 2 scope.
+
+Examples include:
+
+Google Sign-In is not currently implemented.
+The Messages/Profile navigation areas include functionality that is
+planned for future development.
+Some features depend on communication with the remote backend API.
+Offline functionality is implemented for selected marketplace operations
+rather than every application feature.
+The project requires appropriate Firebase configuration for local builds.
+The debug APK is intended for development and testing rather than
+production distribution.
+
+These limitations reflect the current prototype scope and can be addressed
+in future development stages.
+
+Future Development
+
+Future versions of HiveMarket can extend the current prototype with
+additional functionality.
+
+Potential areas for future development include:
+
+Completing Google Sign-In.
+Expanding the Messages functionality.
+Completing the user Profile functionality.
+Extending offline support to additional features.
+Improving synchronisation and conflict handling.
+Adding additional automated test coverage.
+Preparing the application for production deployment.
+
+The existing architecture provides a foundation for extending these
+features without requiring the entire application to be redesigned.
+
+Part 2 Prototype Summary
+
+HiveMarket demonstrates a native Android marketplace application developed
+using Kotlin and Jetpack Compose.
+
+The prototype combines:
+
+Native Android development.
+Jetpack Compose user interfaces.
+MVVM architecture.
+Repository-based data access.
+Retrofit REST API integration.
+Room local persistence.
+Firebase authentication and services.
+Offline-first listing functionality.
+Automated unit testing.
+GitHub Actions continuous integration.
+Git and GitHub version control.
+
+The project demonstrates how these technologies can be combined to produce
+a structured Android marketplace prototype with both local and remote data
+capabilities.
