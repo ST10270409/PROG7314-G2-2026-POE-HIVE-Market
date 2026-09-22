@@ -434,3 +434,43 @@ HiveMarketApi
   │
   ▼
 REST API
+
+---
+
+## Offline-First Design and Data Persistence
+
+HiveMarket uses an offline-first approach for selected marketplace
+functionality. The purpose of this approach is to reduce the application's
+dependence on continuous network connectivity and allow important local
+operations to continue when the REST API is temporarily unavailable.
+
+The application uses **Room Database** for local persistence and the
+`ListingRepository` to coordinate information between the local database
+and the remote API.
+
+### Offline-First Architecture
+
+The offline-first data flow can be represented as:
+
+```text
+                    ┌──────────────────┐
+                    │   Compose UI     │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │    ViewModel     │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │ ListingRepository│
+                    └───────┬───┬──────┘
+                            │   │
+                  Local     │   │    Remote
+                            │   │
+                            ▼   ▼
+                    ┌───────┐ ┌────────────┐
+                    │ Room  │ │ Retrofit   │
+                    │  DB   │ │    API     │
+                    └───────┘ └────────────┘
