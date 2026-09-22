@@ -70,6 +70,21 @@ public class UsersController : ControllerBase
         });
     }
 
+    // TEMPORARY — for demo/video prep only, so the Trust Score badge (which
+    // only renders client-side when sellerTrustScore > 0) has something to
+    // actually show. Real trust score logic (earned via completed sales,
+    // reviews, etc.) is a Final POE concern, not implemented yet. Safe to
+    // remove after recording — left [Authorize]-protected rather than
+    // anonymous so it can't be hit by anyone without a valid Firebase token.
+    [HttpPatch("me/trust-score")]
+    public async Task<ActionResult<UpdatedResponseDto>> SetMyTrustScore([FromQuery] int value)
+    {
+        var user = await _currentUser.GetOrCreateCurrentUserAsync();
+        user.TrustScore = value;
+        await _db.SaveChangesAsync();
+        return Ok(new UpdatedResponseDto { Updated = true });
+    }
+
     [HttpPatch("me")]
     public async Task<ActionResult<UpdatedResponseDto>> UpdateMyProfile([FromBody] UpdateProfileRequestDto body)
     {
