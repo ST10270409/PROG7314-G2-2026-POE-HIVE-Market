@@ -149,6 +149,7 @@ public class OfferDto
     [JsonPropertyName("message")] public string? Message { get; set; }
     [JsonPropertyName("dateOffered")] public string DateOffered { get; set; } = "";
     [JsonPropertyName("status")] public string Status { get; set; } = "";
+    [JsonPropertyName("buyerName")] public string? BuyerName { get; set; }
 }
 
 public class MakeOfferRequestDto

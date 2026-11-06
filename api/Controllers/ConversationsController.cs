@@ -14,11 +14,13 @@ public class ConversationsController : ControllerBase
 {
     private readonly CurrentUserService _currentUser;
     private readonly AppDbContext _db;
+    private readonly INotificationService _notifications;
 
-    public ConversationsController(CurrentUserService currentUser, AppDbContext db)
+    public ConversationsController(CurrentUserService currentUser, AppDbContext db, INotificationService notifications)
     {
         _currentUser = currentUser;
         _db = db;
+        _notifications = notifications;
     }
 
     // GET /api/conversations — the inbox list. Only returns conversations
@@ -123,6 +125,15 @@ public class ConversationsController : ControllerBase
         conversation.LastUpdated = message.Timestamp;
 
         await _db.SaveChangesAsync();
+
+        // Notify the OTHER participant (Firestore inbox + push).
+        var recipientId = conversation.BuyerID == user.UserID ? conversation.SellerID : conversation.BuyerID;
+        var recipient = await _db.Users.FirstOrDefaultAsync(u => u.UserID == recipientId);
+        var listingTitle = (await _db.Listings.FirstOrDefaultAsync(l => l.ListingID == conversation.ListingID))?.Title ?? "";
+        if (recipient != null)
+        {
+            await _notifications.NotifyAsync(recipient, NotificationTypes.NewMessage, UserNames.Display(user), "", listingTitle);
+        }
 
         return Ok(new MessageDto
         {

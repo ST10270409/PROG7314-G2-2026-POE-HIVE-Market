@@ -14,11 +14,13 @@ public class ListingsController : ControllerBase
 {
     private readonly CurrentUserService _currentUser;
     private readonly AppDbContext _db;
+    private readonly INotificationService _notifications;
 
-    public ListingsController(CurrentUserService currentUser, AppDbContext db)
+    public ListingsController(CurrentUserService currentUser, AppDbContext db, INotificationService notifications)
     {
         _currentUser = currentUser;
         _db = db;
+        _notifications = notifications;
     }
 
     // GET /api/listings — backs Browse. Supports the same query params
@@ -109,6 +111,10 @@ public class ListingsController : ControllerBase
         if (listing == null) return NotFound();
         var user = await _currentUser.GetOrCreateCurrentUserAsync();
 
+        if (body.Amount <= 0) return BadRequest(new { error = "Offer must be greater than zero." });
+        if (listing.SellerID == user.UserID) return BadRequest(new { error = "You cannot make an offer on your own listing." });
+        if (listing.Status != "Active") return Conflict(new { error = "This listing is no longer available." });
+
         var offer = new OfferEntity
         {
             ListingID = listingID, BuyerID = user.UserID, Amount = body.Amount,
@@ -117,11 +123,43 @@ public class ListingsController : ControllerBase
         _db.Offers.Add(offer);
         await _db.SaveChangesAsync();
 
+        // Tell the seller (Firestore inbox + push).
+        var seller = await _db.Users.FirstOrDefaultAsync(u => u.UserID == listing.SellerID);
+        if (seller != null)
+        {
+            await _notifications.NotifyAsync(seller, NotificationTypes.NewOffer,
+                UserNames.Display(user), offer.Amount.ToString("0"), listing.Title);
+        }
+
         return Ok(new OfferDto
         {
             OfferID = offer.OfferID, ListingID = offer.ListingID, BuyerID = offer.BuyerID,
             Amount = offer.Amount, Message = offer.Message, Status = offer.Status,
             DateOffered = offer.DateOffered.ToString("O")
+        });
+    }
+
+    // GET /api/listings/{listingID}/offers — the SELLER's view of offers received.
+    [HttpGet("{listingID:int}/offers")]
+    public async Task<ActionResult<OffersResponseDto>> GetOffers(int listingID)
+    {
+        var listing = await _db.Listings.FirstOrDefaultAsync(l => l.ListingID == listingID);
+        if (listing == null) return NotFound();
+        var user = await _currentUser.GetOrCreateCurrentUserAsync();
+        if (listing.SellerID != user.UserID) return Forbid();
+
+        var offers = await _db.Offers.Where(o => o.ListingID == listingID).OrderByDescending(o => o.DateOffered).ToListAsync();
+        var buyerIds = offers.Select(o => o.BuyerID).Distinct().ToList();
+        var buyers = await _db.Users.Where(u => buyerIds.Contains(u.UserID)).ToDictionaryAsync(u => u.UserID);
+
+        return Ok(new OffersResponseDto
+        {
+            Items = offers.Select(o => new OfferDto
+            {
+                OfferID = o.OfferID, ListingID = o.ListingID, BuyerID = o.BuyerID, Amount = o.Amount,
+                Message = o.Message, Status = o.Status, DateOffered = o.DateOffered.ToString("O"),
+                BuyerName = buyers.TryGetValue(o.BuyerID, out var b) ? UserNames.Display(b) : null
+            }).ToList()
         });
     }
 
